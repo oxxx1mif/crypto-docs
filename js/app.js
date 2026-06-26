@@ -1,323 +1,413 @@
-import { fetchRecentCommits, renderCommits } from './github-api.js';
+:root {
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --border-radius-lg: 24px;
+  --border-radius-md: 16px;
+  --border-radius-sm: 12px;
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --bg-primary: #0b0e14;
+  --bg-gradient: radial-gradient(circle at 20% 20%, #1a1f2b, #0b0e14);
+  --bg-surface: rgba(255, 255, 255, 0.04);
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent-primary: #ffffff;
+  --accent-hover: #c9d1d9;
+  --highlight-bg: #bb800926;
+  --highlight-text: #e6b44e;
+  --card-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  --backdrop-blur: blur(12px);
+}
 
-/**
- * Менеджер локализации интерфейса (статичные строки)
- */
-const UI_STRINGS = {
-  ru: {
-    searchPlaceholder: 'Поиск функций...',
-    sectionsTitle: 'Разделы',
-    recentChanges: 'Последние изменения',
-    sourceCode: 'Исходный код',
-    contributors: 'Авторы',
-    noFunctions: 'Функции не найдены',
-  },
-  en: {
-    searchPlaceholder: 'Search functions...',
-    sectionsTitle: 'Sections',
-    recentChanges: 'Recent changes',
-    sourceCode: 'Source code',
-    contributors: 'Contributors',
-    noFunctions: 'No functions found',
+[data-theme="light"] {
+  --bg-primary: #f8f9fb;
+  --bg-gradient: radial-gradient(circle at 20% 20%, #ffffff, #f0f0f5);
+  --bg-surface: rgba(0, 0, 0, 0.02);
+  --bg-glass: rgba(255, 255, 255, 0.75);
+  --border-glass: rgba(0, 0, 0, 0.08);
+  --text-primary: #1b1b1f;
+  --text-secondary: #5f6368;
+  --accent-primary: #1a237e;
+  --accent-hover: #283593;
+  --highlight-bg: #fef3c7;
+  --highlight-text: #92400e;
+  --card-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background var(--transition-smooth), color var(--transition-smooth);
+}
+
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: opacity var(--transition-smooth);
+}
+a:hover {
+  opacity: 0.8;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 0 24px;
+  transition: background var(--transition-smooth), border var(--transition-smooth);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  gap: 16px;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  font-size: 32px;
+  color: var(--accent-primary);
+}
+
+.brand-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  font-size: 20px;
+  pointer-events: none;
+}
+
+#search-input {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--border-radius-md);
+  padding: 10px 16px 10px 40px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  width: 240px;
+  transition: all var(--transition-smooth);
+  outline: none;
+}
+#search-input:focus {
+  background: var(--bg-glass);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--highlight-bg);
+}
+
+.icon-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--border-radius-md);
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+}
+.icon-btn:hover {
+  background: var(--bg-glass);
+  border-color: var(--accent-primary);
+}
+
+.lang-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.app-layout {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  border-right: 1px solid var(--border-glass);
+  padding: 24px 16px;
+  overflow-y: auto;
+  transition: background var(--transition-smooth), border var(--transition-smooth);
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.main-content {
+  flex: 1;
+  padding: 32px;
+  overflow-y: auto;
+}
+
+.section-nav h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding-left: 8px;
+}
+
+.nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--border-radius-md);
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: all var(--transition-smooth);
+}
+.nav-link:hover,
+.nav-link.active {
+  background: var(--bg-surface);
+  color: var(--accent-primary);
+}
+.nav-link .material-icons {
+  font-size: 20px;
+}
+
+.section {
+  margin-bottom: 48px;
+}
+
+.section-header {
+  margin-bottom: 24px;
+  padding-left: 4px;
+}
+.section-header h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.functions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.function-card {
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+}
+.function-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  background: var(--highlight-bg);
+  color: var(--highlight-text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+.metadata span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.metadata .material-icons {
+  font-size: 16px;
+}
+
+.description {
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.code-block {
+  background: var(--bg-surface);
+  border-radius: var(--border-radius-sm);
+  padding: 16px;
+  margin: 16px 0;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+  border: 1px solid var(--border-glass);
+}
+.code-block pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.tag {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: 2px 12px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--border-radius-sm);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 12px;
+  transition: background var(--transition-smooth);
+}
+.source-link:hover {
+  background: var(--bg-glass);
+}
+
+.contributors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-glass);
+}
+.contributors-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+.contributor-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border-glass);
+  transition: border var(--transition-smooth);
+}
+.contributor-avatar:hover {
+  border-color: var(--accent-primary);
+}
+
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: flex;
   }
-};
-
-/**
- * Главный класс приложения
- */
-class CryptoDocApp {
-  constructor() {
-    // Состояние
-    this.currentLang = localStorage.getItem('crypto-docs-lang') || 'en';
-    this.currentTheme = localStorage.getItem('crypto-docs-theme') || 'dark';
-    this.data = null;            // загруженный JSON
-    this.activeSection = null;   // для подсветки в навигации
-
-    // DOM элементы
-    this.sidebar = document.getElementById('sidebar');
-    this.menuToggle = document.getElementById('menu-toggle');
-    this.searchInput = document.getElementById('search-input');
-    this.themeBtn = document.getElementById('theme-btn');
-    this.langBtn = document.getElementById('lang-btn');
-    this.langLabel = document.getElementById('lang-label');
-    this.sectionNav = document.getElementById('section-nav');
-    this.mainContent = document.getElementById('main-content');
-    this.commitsList = document.getElementById('commits-list');
-
-    this.init();
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 64px;
+    bottom: 0;
+    width: 260px;
+    z-index: 90;
+    transition: left var(--transition-smooth);
   }
-
-  init() {
-    // Применяем сохранённые тему и язык
-    this.applyTheme();
-    this.applyLanguage();
-
-    // Обработчики
-    this.menuToggle.addEventListener('click', () => this.toggleSidebar());
-    this.searchInput.addEventListener('input', () => this.handleSearch());
-    this.themeBtn.addEventListener('click', () => this.toggleTheme());
-    this.langBtn.addEventListener('click', () => this.toggleLanguage());
-
-    // Закрываем сайдбар при клике вне его (на мобильных)
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 768 && this.sidebar.classList.contains('open')) {
-        if (!this.sidebar.contains(e.target) && e.target !== this.menuToggle && !this.menuToggle.contains(e.target)) {
-          this.sidebar.classList.remove('open');
-        }
-      }
-    });
-
-    // Загружаем данные и рендерим
-    this.loadData();
+  .sidebar.open {
+    left: 0;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
   }
-
-  async loadData() {
-    try {
-      const response = await fetch('/data/functions.json');
-      if (!response.ok) throw new Error('Failed to load documentation data');
-      this.data = await response.json();
-      this.renderAll();
-      this.loadGitHubCommits();
-      // После рендера можно активировать IntersectionObserver для подсветки секций
-      this.observeSections();
-    } catch (error) {
-      this.mainContent.innerHTML = `<p>Error loading documentation. Please check that the JSON file exists.</p>`;
-      console.error(error);
-    }
+  .main-content {
+    padding: 24px 16px;
   }
-
-  renderAll() {
-    this.renderNavigation();
-    this.renderSections();
+  .functions-grid {
+    grid-template-columns: 1fr;
   }
-
-  /* ========== Навигация ========== */
-  renderNavigation() {
-    if (!this.data) return;
-    const t = UI_STRINGS[this.currentLang];
-    const sections = this.data.sections;
-
-    const navHtml = `
-      <h2>${t.sectionsTitle}</h2>
-      <ul class="nav-list">
-        ${sections.map(section => `
-          <li>
-            <a href="#section-${section.id}" class="nav-link" data-section="${section.id}">
-              <span class="material-icons">category</span>
-              ${section.name[this.currentLang]}
-            </a>
-          </li>
-        `).join('')}
-      </ul>
-    `;
-    this.sectionNav.innerHTML = navHtml;
-
-    // Подсветка активного пункта при клике
-    this.sectionNav.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        // Убираем активный класс у всех
-        this.sectionNav.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-        // На мобильных закрываем сайдбар
-        if (window.innerWidth <= 768) {
-          this.sidebar.classList.remove('open');
-        }
-      });
-    });
+  #search-input {
+    width: 160px;
   }
-
-  /* ========== Основной контент ========== */
-  renderSections() {
-    if (!this.data) return;
-    let html = '';
-    const t = UI_STRINGS[this.currentLang];
-    const lang = this.currentLang;
-
-    this.data.sections.forEach(section => {
-      html += `<section id="section-${section.id}" class="section">
-        <div class="section-header">
-          <h2>${section.name[lang]}</h2>
-        </div>
-        <div class="functions-grid">`;
-
-      section.functions.forEach(func => {
-        html += this.renderFunctionCard(func);
-      });
-
-      html += `</div></section>`;
-    });
-
-    this.mainContent.innerHTML = html;
-  }
-
-  renderFunctionCard(func) {
-    const lang = this.currentLang;
-    const t = UI_STRINGS[this.currentLang];
-    const name = func.name[lang];
-    const desc = func.description[lang];
-    const tags = func.tags || [];
-    const metadata = func.metadata;
-    const contributors = func.contributors || [];
-
-    // Карточка со всеми полями
-    return `
-      <article class="function-card" data-function-id="${func.id}" data-search-content="${this.getSearchText(func)}">
-        <div class="card-title">
-          ${name}
-          ${metadata.crypto_version ? `<span class="badge">${metadata.crypto_version}</span>` : ''}
-        </div>
-
-        <div class="metadata">
-          <span title="Author"><span class="material-icons">person</span>${metadata.author || '—'}</span>
-          <span title="Realix version"><span class="material-icons">package</span>${metadata.os_version || '—'}</span>
-        </div>
-
-        <p class="description">${desc}</p>
-
-        ${func.code_snippet ? `
-        <div class="code-block">
-          <pre>${this.escapeHtml(func.code_snippet)}</pre>
-        </div>` : ''}
-
-        ${tags.length > 0 ? `
-        <div class="tags">
-          ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-        </div>` : ''}
-
-        ${func.implementation_url ? `
-        <a href="${func.implementation_url}" target="_blank" rel="noopener" class="source-link">
-          <span class="material-icons">open_in_new</span>
-          ${t.sourceCode}
-        </a>` : ''}
-
-        ${contributors.length > 0 ? `
-        <div class="contributors">
-          <span class="contributors-label">${t.contributors}:</span>
-          ${contributors.map(user => `
-            <a href="https://github.com/${user}" target="_blank" rel="noopener" title="@${user}">
-              <img class="contributor-avatar" src="https://github.com/${user}.png" alt="${user}" loading="lazy">
-            </a>
-          `).join('')}
-        </div>` : ''}
-      </article>
-    `;
-  }
-
-  /* Вспомогательная функция: собираем весь поисковый текст */
-  getSearchText(func) {
-    const ruName = func.name.ru || '';
-    const enName = func.name.en || '';
-    const ruDesc = func.description.ru || '';
-    const enDesc = func.description.en || '';
-    const tags = (func.tags || []).join(' ');
-    return `${ruName} ${enName} ${ruDesc} ${enDesc} ${tags}`.toLowerCase();
-  }
-
-  escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  /* ========== Поиск ========== */
-  handleSearch() {
-    const query = this.searchInput.value.toLowerCase().trim();
-    const cards = this.mainContent.querySelectorAll('.function-card');
-
-    cards.forEach(card => {
-      const searchData = card.getAttribute('data-search-content') || '';
-      if (query === '' || searchData.includes(query)) {
-        card.classList.remove('hidden');
-      } else {
-        card.classList.add('hidden');
-      }
-    });
-
-    // Скрываем секции, в которых не осталось видимых карточек (опционально)
-    const sections = this.mainContent.querySelectorAll('.section');
-    sections.forEach(section => {
-      const visibleCards = section.querySelectorAll('.function-card:not(.hidden)');
-      if (visibleCards.length === 0) {
-        section.classList.add('hidden');
-      } else {
-        section.classList.remove('hidden');
-      }
-    });
-  }
-
-  /* ========== Смена темы ========== */
-  toggleTheme() {
-    this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('crypto-docs-theme', this.currentTheme);
-    this.applyTheme();
-  }
-
-  applyTheme() {
-    document.documentElement.setAttribute('data-theme', this.currentTheme);
-    const icon = this.themeBtn.querySelector('.material-icons');
-    if (icon) {
-      icon.textContent = this.currentTheme === 'dark' ? 'light_mode' : 'dark_mode';
-    }
-  }
-
-  /* ========== Локализация ========== */
-  toggleLanguage() {
-    this.currentLang = this.currentLang === 'en' ? 'ru' : 'en';
-    localStorage.setItem('crypto-docs-lang', this.currentLang);
-    this.applyLanguage();
-    // Перерендер всех динамических элементов
-    if (this.data) {
-      this.renderAll();
-      // Также перезагружаем коммиты (текст виджета на нужном языке)
-      this.loadGitHubCommits();
-    }
-  }
-
-  applyLanguage() {
-    this.langLabel.textContent = this.currentLang.toUpperCase();
-    // Обновляем статичные строки интерфейса
-    const t = UI_STRINGS[this.currentLang];
-    this.searchInput.placeholder = t.searchPlaceholder;
-    // Заголовок виджета «Recent changes» обновится при перерендере коммитов
-  }
-
-  /* ========== GitHub API ========== */
-  async loadGitHubCommits() {
-    const commits = await fetchRecentCommits();
-    renderCommits(this.commitsList, commits);
-    // Обновляем заголовок виджета на текущий язык
-    const widgetTitle = this.commitsList.parentElement.querySelector('.widget-title');
-    if (widgetTitle) {
-      const t = UI_STRINGS[this.currentLang];
-      widgetTitle.innerHTML = `<span class="material-icons">commit</span> ${t.recentChanges}`;
-    }
-  }
-
-  /* ========== Мобильное меню ========== */
-  toggleSidebar() {
-    this.sidebar.classList.toggle('open');
-  }
-
-  /* ========== Intersection Observer для активной секции ========== */
-  observeSections() {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const id = entry.target.id;
-        const link = this.sectionNav.querySelector(`[data-section="${id.replace('section-', '')}"]`);
-        if (link) {
-          if (entry.isIntersecting) {
-            this.sectionNav.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-          }
-        }
-      });
-    }, { threshold: 0.3 });
-
-    document.querySelectorAll('.section').forEach(section => observer.observe(section));
+  .header-actions {
+    gap: 8px;
   }
 }
 
-// Инициализация приложения после загрузки DOM
-document.addEventListener('DOMContentLoaded', () => {
-  new CryptoDocApp();
-});
+.hidden {
+  display: none !important;
+}
