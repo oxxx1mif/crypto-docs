@@ -1,413 +1,244 @@
-:root {
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  --border-radius-lg: 24px;
-  --border-radius-md: 16px;
-  --border-radius-sm: 12px;
-  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --bg-primary: #0b0e14;
-  --bg-gradient: radial-gradient(circle at 20% 20%, #1a1f2b, #0b0e14);
-  --bg-surface: rgba(255, 255, 255, 0.04);
-  --bg-glass: rgba(255, 255, 255, 0.05);
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
-  --accent-primary: #ffffff;
-  --accent-hover: #c9d1d9;
-  --highlight-bg: #bb800926;
-  --highlight-text: #e6b44e;
-  --card-shadow: 0 8px 32px rgba(0,0,0,0.3);
-  --backdrop-blur: blur(12px);
-}
-
-[data-theme="light"] {
-  --bg-primary: #f8f9fb;
-  --bg-gradient: radial-gradient(circle at 20% 20%, #ffffff, #f0f0f5);
-  --bg-surface: rgba(0, 0, 0, 0.02);
-  --bg-glass: rgba(255, 255, 255, 0.75);
-  --border-glass: rgba(0, 0, 0, 0.08);
-  --text-primary: #1b1b1f;
-  --text-secondary: #5f6368;
-  --accent-primary: #1a237e;
-  --accent-hover: #283593;
-  --highlight-bg: #fef3c7;
-  --highlight-text: #92400e;
-  --card-shadow: 0 8px 24px rgba(0,0,0,0.06);
-}
-
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: var(--font-family);
-  background: var(--bg-gradient);
-  color: var(--text-primary);
-  line-height: 1.5;
-  min-height: 100vh;
-  transition: background var(--transition-smooth), color var(--transition-smooth);
-}
-
-a {
-  color: var(--accent-primary);
-  text-decoration: none;
-  transition: opacity var(--transition-smooth);
-}
-a:hover {
-  opacity: 0.8;
-}
-
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--bg-glass);
-  backdrop-filter: var(--backdrop-blur);
-  border-bottom: 1px solid var(--border-glass);
-  padding: 0 24px;
-  transition: background var(--transition-smooth), border var(--transition-smooth);
-}
-
-.header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px;
-  gap: 16px;
-}
-
-.menu-toggle {
-  display: none;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.header-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-icon {
-  font-size: 32px;
-  color: var(--accent-primary);
-}
-
-.brand-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  color: var(--text-secondary);
-  font-size: 20px;
-  pointer-events: none;
-}
-
-#search-input {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--border-radius-md);
-  padding: 10px 16px 10px 40px;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  width: 240px;
-  transition: all var(--transition-smooth);
-  outline: none;
-}
-#search-input:focus {
-  background: var(--bg-glass);
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 2px var(--highlight-bg);
-}
-
-.icon-btn {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--border-radius-md);
-  color: var(--text-primary);
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--transition-smooth);
-}
-.icon-btn:hover {
-  background: var(--bg-glass);
-  border-color: var(--accent-primary);
-}
-
-.lang-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-left: 4px;
-}
-
-.app-layout {
-  display: flex;
-  min-height: calc(100vh - 64px);
-}
-
-.sidebar {
-  width: 280px;
-  flex-shrink: 0;
-  background: var(--bg-glass);
-  backdrop-filter: var(--backdrop-blur);
-  border-right: 1px solid var(--border-glass);
-  padding: 24px 16px;
-  overflow-y: auto;
-  transition: background var(--transition-smooth), border var(--transition-smooth);
-}
-
-.sidebar-content {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-.main-content {
-  flex: 1;
-  padding: 32px;
-  overflow-y: auto;
-}
-
-.section-nav h2 {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-  padding-left: 8px;
-}
-
-.nav-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: var(--border-radius-md);
-  color: var(--text-primary);
-  font-weight: 500;
-  transition: all var(--transition-smooth);
-}
-.nav-link:hover,
-.nav-link.active {
-  background: var(--bg-surface);
-  color: var(--accent-primary);
-}
-.nav-link .material-icons {
-  font-size: 20px;
-}
-
-.section {
-  margin-bottom: 48px;
-}
-
-.section-header {
-  margin-bottom: 24px;
-  padding-left: 4px;
-}
-.section-header h2 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-}
-
-.functions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 24px;
-}
-
-.function-card {
-  background: var(--bg-glass);
-  backdrop-filter: var(--backdrop-blur);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--border-radius-lg);
-  padding: 24px;
-  box-shadow: var(--card-shadow);
-  transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
-}
-.function-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-}
-
-.card-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.badge {
-  background: var(--highlight-bg);
-  color: var(--highlight-text);
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.metadata {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-}
-.metadata span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.metadata .material-icons {
-  font-size: 16px;
-}
-
-.description {
-  margin-bottom: 16px;
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
-.code-block {
-  background: var(--bg-surface);
-  border-radius: var(--border-radius-sm);
-  padding: 16px;
-  margin: 16px 0;
-  overflow-x: auto;
-  font-family: 'Fira Code', 'Cascadia Code', monospace;
-  font-size: 0.85rem;
-  border: 1px solid var(--border-glass);
-}
-.code-block pre {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
-}
-.tag {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-glass);
-  border-radius: 16px;
-  padding: 2px 12px;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.source-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--border-radius-sm);
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  margin-top: 12px;
-  transition: background var(--transition-smooth);
-}
-.source-link:hover {
-  background: var(--bg-glass);
-}
-
-.contributors {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-glass);
-}
-.contributors-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  margin-right: 4px;
-}
-.contributor-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid var(--border-glass);
-  transition: border var(--transition-smooth);
-}
-.contributor-avatar:hover {
-  border-color: var(--accent-primary);
-}
-
-@media (max-width: 768px) {
-  .menu-toggle {
-    display: flex;
+const UI_STRINGS = {
+  ru: {
+    searchPlaceholder: 'Поиск функций...',
+    sectionsTitle: 'Разделы',
+    sourceCode: 'Исходный код',
+    contributors: 'Авторы',
+    noFunctions: 'Функции не найдены',
+    loading: 'Загрузка...',
+    error: 'Ошибка загрузки данных',
+  },
+  en: {
+    searchPlaceholder: 'Search functions...',
+    sectionsTitle: 'Sections',
+    sourceCode: 'Source code',
+    contributors: 'Contributors',
+    noFunctions: 'No functions found',
+    loading: 'Loading...',
+    error: 'Error loading data',
   }
-  .sidebar {
-    position: fixed;
-    left: -100%;
-    top: 64px;
-    bottom: 0;
-    width: 260px;
-    z-index: 90;
-    transition: left var(--transition-smooth);
+};
+
+class CryptoDocApp {
+  constructor() {
+    this.currentLang = localStorage.getItem('crypto-docs-lang') || 'en';
+    this.currentTheme = localStorage.getItem('crypto-docs-theme') || 'dark';
+    this.data = null;
+    this.activeSectionId = null;
+
+    this.sidebar = document.getElementById('sidebar');
+    this.menuToggle = document.getElementById('menu-toggle');
+    this.searchInput = document.getElementById('search-input');
+    this.themeBtn = document.getElementById('theme-btn');
+    this.langBtn = document.getElementById('lang-btn');
+    this.langLabel = document.getElementById('lang-label');
+    this.sectionNav = document.getElementById('section-nav');
+    this.mainContent = document.getElementById('main-content');
+
+    this.init();
   }
-  .sidebar.open {
-    left: 0;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+
+  init() {
+    this.applyTheme();
+    this.applyLanguage();
+
+    this.menuToggle.addEventListener('click', () => this.toggleSidebar());
+    this.searchInput.addEventListener('input', () => this.handleSearch());
+    this.themeBtn.addEventListener('click', () => this.toggleTheme());
+    this.langBtn.addEventListener('click', () => this.toggleLanguage());
+
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768 && this.sidebar.classList.contains('open')) {
+        if (!this.sidebar.contains(e.target) && e.target !== this.menuToggle && !this.menuToggle.contains(e.target)) {
+          this.sidebar.classList.remove('open');
+        }
+      }
+    });
+
+    this.loadData();
   }
-  .main-content {
-    padding: 24px 16px;
+
+  async loadData() {
+    try {
+      const response = await fetch('./data/functions.json');
+      if (!response.ok) throw new Error('functions.json not found');
+      this.data = await response.json();
+      this.renderAll();
+      this.observeSections();
+    } catch (error) {
+      this.mainContent.innerHTML = `<p>${UI_STRINGS[this.currentLang].error}</p>`;
+    }
   }
-  .functions-grid {
-    grid-template-columns: 1fr;
+
+  renderAll() {
+    this.renderNavigation();
+    this.renderSections();
   }
-  #search-input {
-    width: 160px;
+
+  renderNavigation() {
+    if (!this.data || !this.data.sections) return;
+    const t = UI_STRINGS[this.currentLang];
+    let html = `<h2>${t.sectionsTitle}</h2><ul class="nav-list">`;
+    this.data.sections.forEach(section => {
+      html += `
+        <li>
+          <a href="#section-${section.id}" class="nav-link" data-section="${section.id}">
+            <span class="material-icons">category</span>
+            ${section.name[this.currentLang]}
+          </a>
+        </li>`;
+    });
+    html += `</ul>`;
+    this.sectionNav.innerHTML = html;
+
+    this.sectionNav.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        this.setActiveNav(link.dataset.section);
+        if (window.innerWidth <= 768) this.sidebar.classList.remove('open');
+      });
+    });
   }
-  .header-actions {
-    gap: 8px;
+
+  setActiveNav(sectionId) {
+    this.sectionNav.querySelectorAll('.nav-link').forEach(link => {
+      link.classList.toggle('active', link.dataset.section === sectionId);
+    });
+    this.activeSectionId = sectionId;
+  }
+
+  renderSections() {
+    if (!this.data || !this.data.sections) return;
+    const lang = this.currentLang;
+    const t = UI_STRINGS[lang];
+    let html = '';
+
+    this.data.sections.forEach(section => {
+      html += `<section id="section-${section.id}" class="section">
+        <div class="section-header">
+          <h2>${section.name[lang]}</h2>
+        </div>
+        <div class="functions-grid">`;
+
+      if (!section.functions || section.functions.length === 0) {
+        html += `<p>${t.noFunctions}</p>`;
+      } else {
+        section.functions.forEach(func => {
+          html += this.renderFunctionCard(func);
+        });
+      }
+
+      html += `</div></section>`;
+    });
+
+    this.mainContent.innerHTML = html;
+  }
+
+  renderFunctionCard(func) {
+    const lang = this.currentLang;
+    const t = UI_STRINGS[lang];
+    const name = func.name[lang] || '';
+    const desc = func.description[lang] || '';
+    const tags = func.tags || [];
+    const metadata = func.metadata;
+    const contributors = func.contributors || [];
+
+    return `
+      <article class="function-card" data-function-id="${func.id}" data-search-content="${this.getSearchText(func)}">
+        <div class="card-title">
+          ${this.escapeHtml(name)}
+          ${metadata && metadata.crypto_version ? `<span class="badge">${this.escapeHtml(metadata.crypto_version)}</span>` : ''}
+        </div>
+        <div class="metadata">
+          <span title="Author"><span class="material-icons">person</span>${metadata ? this.escapeHtml(metadata.author || '—') : '—'}</span>
+          <span title="OS version"><span class="material-icons">package</span>${metadata ? this.escapeHtml(metadata.os_version || '—') : '—'}</span>
+        </div>
+        <p class="description">${this.escapeHtml(desc)}</p>
+        ${func.code_snippet ? `<div class="code-block"><pre>${this.escapeHtml(func.code_snippet)}</pre></div>` : ''}
+        ${tags.length ? `<div class="tags">${tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+        ${func.implementation_url ? `<a href="${this.escapeHtml(func.implementation_url)}" target="_blank" rel="noopener" class="source-link"><span class="material-icons">open_in_new</span>${t.sourceCode}</a>` : ''}
+        ${contributors.length ? `
+          <div class="contributors">
+            <span class="contributors-label">${t.contributors}:</span>
+            ${contributors.map(user => `
+              <a href="https://github.com/${this.escapeHtml(user)}" target="_blank" rel="noopener" title="@${this.escapeHtml(user)}">
+                <img class="contributor-avatar" src="https://github.com/${this.escapeHtml(user)}.png" alt="${this.escapeHtml(user)}" loading="lazy">
+              </a>
+            `).join('')}
+          </div>` : ''}
+      </article>
+    `;
+  }
+
+  getSearchText(func) {
+    const ruName = (func.name.ru || '').toLowerCase();
+    const enName = (func.name.en || '').toLowerCase();
+    const ruDesc = (func.description.ru || '').toLowerCase();
+    const enDesc = (func.description.en || '').toLowerCase();
+    const tags = (func.tags || []).join(' ').toLowerCase();
+    return `${ruName} ${enName} ${ruDesc} ${enDesc} ${tags}`;
+  }
+
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  handleSearch() {
+    const query = this.searchInput.value.toLowerCase().trim();
+    const cards = this.mainContent.querySelectorAll('.function-card');
+    cards.forEach(card => {
+      const data = card.getAttribute('data-search-content') || '';
+      card.classList.toggle('hidden', query !== '' && !data.includes(query));
+    });
+    this.mainContent.querySelectorAll('.section').forEach(section => {
+      const visible = section.querySelectorAll('.function-card:not(.hidden)');
+      section.classList.toggle('hidden', visible.length === 0);
+    });
+  }
+
+  toggleTheme() {
+    this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('crypto-docs-theme', this.currentTheme);
+    this.applyTheme();
+  }
+
+  applyTheme() {
+    document.documentElement.setAttribute('data-theme', this.currentTheme);
+    const icon = this.themeBtn.querySelector('.material-icons');
+    if (icon) icon.textContent = this.currentTheme === 'dark' ? 'light_mode' : 'dark_mode';
+  }
+
+  toggleLanguage() {
+    this.currentLang = this.currentLang === 'en' ? 'ru' : 'en';
+    localStorage.setItem('crypto-docs-lang', this.currentLang);
+    this.applyLanguage();
+    if (this.data) this.renderAll();
+  }
+
+  applyLanguage() {
+    this.langLabel.textContent = this.currentLang.toUpperCase();
+    const t = UI_STRINGS[this.currentLang];
+    this.searchInput.placeholder = t.searchPlaceholder;
+  }
+
+  toggleSidebar() {
+    this.sidebar.classList.toggle('open');
+  }
+
+  observeSections() {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id.replace('section-', '');
+          this.setActiveNav(id);
+        }
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.section').forEach(section => observer.observe(section));
   }
 }
 
-.hidden {
-  display: none !important;
-}
+document.addEventListener('DOMContentLoaded', () => {
+  new CryptoDocApp();
+});
