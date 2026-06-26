@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Documentation</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation">
+        <span class="material-icons">menu</span>
+      </button>
+      <div class="header-brand">
+        <span class="material-icons brand-icon">shield</span>
+        <h1 class="brand-title">Crypto</h1>
+      </div>
+      <div class="header-actions">
+        <div class="search-box">
+          <span class="material-icons search-icon">search</span>
+          <input type="search" id="search-input" placeholder="Search functions..." autocomplete="off">
+        </div>
+        <div class="theme-toggle">
+          <button id="theme-btn" class="icon-btn" aria-label="Toggle theme">
+            <span class="material-icons">light_mode</span>
+          </button>
+        </div>
+        <div class="lang-toggle">
+          <button id="lang-btn" class="icon-btn" aria-label="Switch language">
+            <span class="material-icons">language</span>
+            <span id="lang-label" class="lang-label">EN</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-content">
+        <nav class="section-nav" id="section-nav">
+        </nav>
+        <div class="github-widget" id="github-widget">
+          <h3 class="widget-title">
+            <span class="material-icons">commit</span>
+            Recent changes
+          </h3>
+          <div class="commits-list" id="commits-list">
+          </div>
+        </div>
+      </div>
+    </aside>
+    <main class="main-content" id="main-content">
+    </main>
+  </div>
+
+  <script src="/js/github-api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
