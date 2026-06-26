@@ -571,7 +571,6 @@ void compute() {
       }, { threshold: 0.3 });
       sections.forEach(section => observer.observe(section));
 
-      // Search
       searchInput.addEventListener('input', () => {
         const query = searchInput.value.toLowerCase().trim();
         cards.forEach(card => {
