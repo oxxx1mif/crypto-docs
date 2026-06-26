@@ -5,7 +5,396 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crypto Module Documentation</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    :root {
+      --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      --border-radius-lg: 24px;
+      --border-radius-md: 16px;
+      --border-radius-sm: 12px;
+      --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --bg-primary: #0b0e14;
+      --bg-gradient: radial-gradient(circle at 20% 20%, #1a1f2b, #0b0e14);
+      --bg-surface: rgba(255, 255, 255, 0.04);
+      --bg-glass: rgba(255, 255, 255, 0.05);
+      --border-glass: rgba(255, 255, 255, 0.08);
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent-primary: #ffffff;
+      --accent-hover: #c9d1d9;
+      --highlight-bg: #bb800926;
+      --highlight-text: #e6b44e;
+      --card-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      --backdrop-blur: blur(12px);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8f9fb;
+      --bg-gradient: radial-gradient(circle at 20% 20%, #ffffff, #f0f0f5);
+      --bg-surface: rgba(0, 0, 0, 0.02);
+      --bg-glass: rgba(255, 255, 255, 0.75);
+      --border-glass: rgba(0, 0, 0, 0.08);
+      --text-primary: #1b1b1f;
+      --text-secondary: #5f6368;
+      --accent-primary: #1a237e;
+      --accent-hover: #283593;
+      --highlight-bg: #fef3c7;
+      --highlight-text: #92400e;
+      --card-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-gradient);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background var(--transition-smooth), color var(--transition-smooth);
+    }
+
+    a {
+      color: var(--accent-primary);
+      text-decoration: none;
+      transition: opacity var(--transition-smooth);
+    }
+    a:hover { opacity: 0.8; }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-glass);
+      backdrop-filter: var(--backdrop-blur);
+      border-bottom: 1px solid var(--border-glass);
+      padding: 0 24px;
+      transition: background var(--transition-smooth), border var(--transition-smooth);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 16px;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      font-size: 32px;
+      color: var(--accent-primary);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-secondary);
+      font-size: 20px;
+      pointer-events: none;
+    }
+
+    #search-input {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--border-radius-md);
+      padding: 10px 16px 10px 40px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      width: 200px;
+      transition: all var(--transition-smooth);
+      outline: none;
+    }
+    #search-input:focus {
+      background: var(--bg-glass);
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px var(--highlight-bg);
+    }
+
+    .icon-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--border-radius-md);
+      color: var(--text-primary);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-smooth);
+    }
+    .icon-btn:hover {
+      background: var(--bg-glass);
+      border-color: var(--accent-primary);
+    }
+
+    .lang-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .app-layout {
+      display: flex;
+      min-height: calc(100vh - 64px);
+    }
+
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      background: var(--bg-glass);
+      backdrop-filter: var(--backdrop-blur);
+      border-right: 1px solid var(--border-glass);
+      padding: 24px 16px;
+      overflow-y: auto;
+      transition: background var(--transition-smooth), border var(--transition-smooth);
+    }
+
+    .sidebar-content {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 32px;
+      overflow-y: auto;
+    }
+
+    .section-nav h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      padding-left: 8px;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--border-radius-md);
+      color: var(--text-primary);
+      font-weight: 500;
+      transition: all var(--transition-smooth);
+    }
+    .nav-link:hover,
+    .nav-link.active {
+      background: var(--bg-surface);
+      color: var(--accent-primary);
+    }
+    .nav-link .material-icons { font-size: 20px; }
+
+    .section {
+      margin-bottom: 48px;
+    }
+
+    .section-header {
+      margin-bottom: 24px;
+      padding-left: 4px;
+    }
+    .section-header h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+
+    .functions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
+    }
+
+    .function-card {
+      background: var(--bg-glass);
+      backdrop-filter: var(--backdrop-blur);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--border-radius-lg);
+      padding: 24px;
+      box-shadow: var(--card-shadow);
+      transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+    }
+    .function-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      background: var(--highlight-bg);
+      color: var(--highlight-text);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metadata {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+    .metadata span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .metadata .material-icons { font-size: 16px; }
+
+    .description {
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .code-block {
+      background: var(--bg-surface);
+      border-radius: var(--border-radius-sm);
+      padding: 16px;
+      margin: 16px 0;
+      overflow-x: auto;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.85rem;
+      border: 1px solid var(--border-glass);
+    }
+    .code-block pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .tag {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      padding: 2px 12px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .source-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--border-radius-sm);
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-top: 12px;
+      transition: background var(--transition-smooth);
+    }
+    .source-link:hover { background: var(--bg-glass); }
+
+    .contributors {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-glass);
+    }
+    .contributors-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-right: 4px;
+    }
+    .contributor-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border-glass);
+      transition: border var(--transition-smooth);
+    }
+    .contributor-avatar:hover { border-color: var(--accent-primary); }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      .menu-toggle { display: flex; }
+      .sidebar {
+        position: fixed;
+        left: -100%;
+        top: 64px;
+        bottom: 0;
+        width: 260px;
+        z-index: 90;
+        transition: left var(--transition-smooth);
+      }
+      .sidebar.open { left: 0; box-shadow: 4px 0 24px rgba(0,0,0,0.4); }
+      .main-content { padding: 24px 16px; }
+      .functions-grid { grid-template-columns: 1fr; }
+      #search-input { width: 150px; }
+      .header-actions { gap: 8px; }
+    }
+  </style>
 </head>
 <body>
   <header class="app-header">
@@ -22,17 +411,13 @@
           <span class="material-icons search-icon">search</span>
           <input type="search" id="search-input" placeholder="Search functions..." autocomplete="off">
         </div>
-        <div class="theme-toggle">
-          <button id="theme-btn" class="icon-btn" aria-label="Toggle theme">
-            <span class="material-icons">light_mode</span>
-          </button>
-        </div>
-        <div class="lang-toggle">
-          <button id="lang-btn" class="icon-btn" aria-label="Switch language">
-            <span class="material-icons">language</span>
-            <span id="lang-label" class="lang-label">EN</span>
-          </button>
-        </div>
+        <button id="theme-btn" class="icon-btn" aria-label="Toggle theme">
+          <span class="material-icons">light_mode</span>
+        </button>
+        <button id="lang-btn" class="icon-btn" aria-label="Switch language">
+          <span class="material-icons">language</span>
+          <span id="lang-label" class="lang-label">EN</span>
+        </button>
       </div>
     </div>
   </header>
@@ -40,12 +425,168 @@
   <div class="app-layout">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-content">
-        <nav class="section-nav" id="section-nav"></nav>
+        <nav class="section-nav">
+          <h2 data-en="Sections" data-ru="Разделы">Sections</h2>
+          <ul class="nav-list">
+            <li><a href="#section-hashes" class="nav-link" data-section="hashes"><span class="material-icons">category</span> <span data-en="Hashes" data-ru="Хэши">Hashes</span></a></li>
+          </ul>
+        </nav>
       </div>
     </aside>
-    <main class="main-content" id="main-content"></main>
+    <main class="main-content" id="main-content">
+      <!-- Section Hashes -->
+      <section id="section-hashes" class="section">
+        <div class="section-header">
+          <h2 data-en="Hashes" data-ru="Хэши">Hashes</h2>
+        </div>
+        <div class="functions-grid">
+          <!-- SHA-256 Card -->
+          <article class="function-card" data-function-id="sha256" data-search-content="sha-256 sha256 cryptographic hash function 256-bit sha-2 sha2 hashing integrity fips хэширование криптографическая хэш-функция">
+            <div class="card-title">
+              SHA-256
+              <span class="badge">v0.1</span>
+            </div>
+            <div class="metadata">
+              <span title="Author"><span class="material-icons">person</span>oxxx1mif</span>
+              <span title="OS version"><span class="material-icons">package</span>v0.7</span>
+            </div>
+            <p class="description" data-en="Cryptographic hash function that computes a 256-bit digest using the SHA-2 algorithm." data-ru="Криптографическая хэш-функция, вычисляющая 256-битное значение по алгоритму SHA-2.">
+              Cryptographic hash function that computes a 256-bit digest using the SHA-2 algorithm.
+            </p>
+            <div class="code-block">
+              <pre>// Rust API
+use sha256::Sha256;
+
+let mut hasher = Sha256::new();
+hasher.update(b"hello world");
+let digest = hasher.finalize();
+assert_eq!(digest.len(), 32);
+
+// C API
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+struct Sha256;
+
+extern void sha256_init(struct Sha256 *ctx);
+extern void sha256_update(struct Sha256 *ctx, const uint8_t *data, size_t len);
+extern void sha256_finalize(struct Sha256 *ctx, uint8_t out[32]);
+
+void compute() {
+    struct Sha256 ctx;
+    sha256_init(&amp;ctx);
+    sha256_update(&amp;ctx, (const uint8_t*)"abc", 3);
+    uint8_t digest[32];
+    sha256_finalize(&amp;ctx, digest);
+}</pre>
+            </div>
+            <div class="tags">
+              <span class="tag">sha2</span>
+              <span class="tag">hashing</span>
+              <span class="tag">integrity</span>
+              <span class="tag">fips</span>
+            </div>
+            <a href="https://github.com/NightFox-YT/Realix/tree/feature/crypto/source/crypto/sha256" target="_blank" rel="noopener" class="source-link">
+              <span class="material-icons">open_in_new</span>
+              <span data-en="Source code" data-ru="Исходный код">Source code</span>
+            </a>
+            <div class="contributors">
+              <span class="contributors-label" data-en="Contributors" data-ru="Авторы">Contributors</span>
+              <a href="https://github.com/oxxx1mif" target="_blank" rel="noopener" title="@oxxx1mif">
+                <img class="contributor-avatar" src="https://github.com/oxxx1mif.png" alt="oxxx1mif" loading="lazy">
+              </a>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <script src="./js/app.js"></script>
+  <script>
+    (function() {
+      const html = document.documentElement;
+      const themeBtn = document.getElementById('theme-btn');
+      const langBtn = document.getElementById('lang-btn');
+      const langLabel = document.getElementById('lang-label');
+      const searchInput = document.getElementById('search-input');
+      const sidebar = document.getElementById('sidebar');
+      const menuToggle = document.getElementById('menu-toggle');
+      const navLinks = document.querySelectorAll('.nav-link');
+      const sections = document.querySelectorAll('.section');
+      const cards = document.querySelectorAll('.function-card');
+
+      let currentLang = localStorage.getItem('crypto-docs-lang') || 'en';
+      let currentTheme = localStorage.getItem('crypto-docs-theme') || 'dark';
+
+      function applyTheme() {
+        html.setAttribute('data-theme', currentTheme);
+        const icon = themeBtn.querySelector('.material-icons');
+        if (icon) icon.textContent = currentTheme === 'dark' ? 'light_mode' : 'dark_mode';
+      }
+
+      function applyLanguage() {
+        langLabel.textContent = currentLang.toUpperCase();
+        document.querySelectorAll('[data-en][data-ru]').forEach(el => {
+          el.textContent = el.getAttribute(`data-${currentLang}`) || el.textContent;
+        });
+        searchInput.placeholder = currentLang === 'ru' ? 'Поиск функций...' : 'Search functions...';
+        // Update section nav headings
+        document.querySelector('.section-nav h2').textContent = currentLang === 'ru' ? 'Разделы' : 'Sections';
+      }
+
+      themeBtn.addEventListener('click', () => {
+        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('crypto-docs-theme', currentTheme);
+        applyTheme();
+      });
+
+      langBtn.addEventListener('click', () => {
+        currentLang = currentLang === 'en' ? 'ru' : 'en';
+        localStorage.setItem('crypto-docs-lang', currentLang);
+        applyLanguage();
+      });
+
+      menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
+          if (!sidebar.contains(e.target) && e.target !== menuToggle && !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+          }
+        }
+      });
+
+      // Active nav on scroll (simple intersection observer)
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id.replace('section-', '');
+            navLinks.forEach(link => {
+              link.classList.toggle('active', link.dataset.section === id);
+            });
+          }
+        });
+      }, { threshold: 0.3 });
+      sections.forEach(section => observer.observe(section));
+
+      // Search
+      searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase().trim();
+        cards.forEach(card => {
+          const searchData = card.getAttribute('data-search-content') || '';
+          card.classList.toggle('hidden', query !== '' && !searchData.includes(query));
+        });
+        sections.forEach(section => {
+          const visible = section.querySelectorAll('.function-card:not(.hidden)');
+          section.classList.toggle('hidden', visible.length === 0);
+        });
+      });
+
+      applyTheme();
+      applyLanguage();
+    })();
+  </script>
 </body>
 </html>
