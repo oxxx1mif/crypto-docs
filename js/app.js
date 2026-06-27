@@ -60,19 +60,14 @@ class CryptoApp {
     });
     this.sidebar.innerHTML = html;
 
-    // Раскрытие/сворачивание по клику на раздел
     this.sidebar.querySelectorAll('.section-link').forEach(link => {
       link.addEventListener('click', (e) => {
         const item = link.parentElement;
         const isOpen = item.classList.contains('open');
-        // Закрываем все
         this.sidebar.querySelectorAll('.section-item').forEach(el => el.classList.remove('open'));
-        // Открываем только если был закрыт
         if (!isOpen) item.classList.add('open');
-        // Навигация произойдёт по ссылке, но мы оставили hash
       });
     });
-    // Предотвращаем всплытие клика по функциям
     this.sidebar.querySelectorAll('.func-link').forEach(link => {
       link.addEventListener('click', (e) => e.stopPropagation());
     });
@@ -80,7 +75,6 @@ class CryptoApp {
 
   highlightSidebar(route) {
     this.sidebar.querySelectorAll('.section-link, .func-link').forEach(el => el.classList.remove('active'));
-    // Закрываем все разделы, чтобы потом открыть нужный
     this.sidebar.querySelectorAll('.section-item').forEach(el => el.classList.remove('open'));
 
     if (route.page === 'section') {
@@ -165,8 +159,12 @@ class CryptoApp {
     }
     if (func.code_examples) {
       html += `<div class="detail-section"><h3>Code Examples</h3>`;
-      if (func.code_examples.rust) html += this.codeBlock(func.code_examples.rust, 'rust');
-      if (func.code_examples.c) html += this.codeBlock(func.code_examples.c, 'c');
+      if (func.code_examples.rust) {
+        html += `<div class="code-block"><pre><code class="language-rust">${this.escapeHtml(func.code_examples.rust)}</code></pre><button class="copy-btn">⧉</button></div>`;
+      }
+      if (func.code_examples.c) {
+        html += `<div class="code-block"><pre><code class="language-c">${this.escapeHtml(func.code_examples.c)}</code></pre><button class="copy-btn">⧉</button></div>`;
+      }
       html += `</div>`;
     }
     html += `<a href="${func.implementation_url}" target="_blank" class="source-link">Source code →</a>`;
@@ -180,11 +178,18 @@ class CryptoApp {
     html += `</div>`;
     this.content.innerHTML = html;
     this.attachCopyButtons();
+
+    // Подсветка синтаксиса для всех блоков кода
+    if (window.hljs) {
+      document.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+      });
+    }
   }
 
   codeBlock(code, lang) {
     const escaped = this.escapeHtml(code);
-    return `<div class="code-block"><pre><code>${escaped}</code></pre><button class="copy-btn">⧉</button></div>`;
+    return `<div class="code-block"><pre><code class="language-${lang}">${escaped}</code></pre><button class="copy-btn">⧉</button></div>`;
   }
 
   attachCopyButtons() {
@@ -213,6 +218,12 @@ class CryptoApp {
       html += `</div>`;
     }
     this.content.innerHTML = html;
+    // На случай, если в будущем в результатах поиска появятся сниппеты кода
+    if (window.hljs) {
+      document.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+      });
+    }
   }
 
   escapeHtml(text) {
