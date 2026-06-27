@@ -1,74 +1,40 @@
-class CryptoDocApp {
-  constructor() {
+document.addEventListener('DOMContentLoaded', () => {
+  // Load data
+  fetch('data/functions.json')
+    .then(res => res.json())
+    .then(data => {
+      const app = new CryptoApp(data);
+      app.init();
+    });
+});
+
+class CryptoApp {
+  constructor(data) {
+    this.data = data;           // { sections: [...] }
     this.state = {
-      sections: [],
-      functions: {},
-      currentView: null,
       searchQuery: '',
+      route: this.getRoute()
     };
-    this.cache = {
-      sectionNav: document.getElementById('section-nav'),
-      mainContent: document.getElementById('main-content'),
-      searchInput: document.getElementById('search-input'),
-      sidebar: document.getElementById('sidebar'),
-      menuToggle: document.getElementById('menu-toggle'),
-    };
-    this.init();
+    this.searchInput = document.getElementById('search');
+    this.sidebar = document.getElementById('nav-sections');
+    this.content = document.getElementById('content');
   }
 
   init() {
-    this.bindEvents();
-    this.loadData().then(() => {
-      this.handleRoute();
-      window.addEventListener('hashchange', () => this.handleRoute());
+    this.buildSidebar();
+    this.handleRoute();
+    window.addEventListener('hashchange', () => {
+      this.state.route = this.getRoute();
+      this.state.searchQuery = '';
+      this.searchInput.value = '';
+      this.render();
     });
-  }
-
-  bindEvents() {
-    this.cache.menuToggle.addEventListener('click', () => {
-      this.cache.sidebar.classList.toggle('open');
+    this.searchInput.addEventListener('input', () => {
+      this.state.searchQuery = this.searchInput.value.trim().toLowerCase();
+      window.location.hash = '#/';
+      this.state.route = { page: 'home' };
+      this.render();
     });
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 768 && this.cache.sidebar.classList.contains('open')) {
-        if (!this.cache.sidebar.contains(e.target) && e.target !== this.cache.menuToggle && !this.cache.menuToggle.contains(e.target)) {
-          this.cache.sidebar.classList.remove('open');
-        }
-      }
-    });
-    this.cache.searchInput.addEventListener('input', (e) => {
-      this.state.searchQuery = e.target.value.trim().toLowerCase();
-      if (this.state.searchQuery) {
-        window.location.hash = '#/';
-      } else {
-        window.location.hash = window.location.hash || '#/';
-      }
-      this.renderView();
-    });
-  }
-
-  async loadData() {
-    try {
-      const listRes = await fetch('./data/sections-list.json');
-      const sectionIds = await listRes.json();
-      const sections = [];
-      const functions = {};
-      for (const id of sectionIds) {
-        const secRes = await fetch(`./data/sections/${id}.json`);
-        const sec = await secRes.json();
-        sections.push(sec);
-        for (const funcId of sec.functions) {
-          if (!functions[funcId]) {
-            const funcRes = await fetch(`./data/functions/${funcId}.json`);
-            functions[funcId] = await funcRes.json();
-          }
-        }
-      }
-      this.state.sections = sections;
-      this.state.functions = functions;
-    } catch (err) {
-      console.error('Data loading error:', err);
-      this.cache.mainContent.innerHTML = '<p>Error loading documentation.</p>';
-    }
   }
 
   getRoute() {
@@ -80,192 +46,184 @@ class CryptoDocApp {
     return { page: 'home' };
   }
 
-  handleRoute() {
-    const route = this.getRoute();
-    if (route.page === 'function' || route.page === 'section') {
-      this.state.searchQuery = '';
-      this.cache.searchInput.value = '';
-    }
-    this.renderView();
+  /* ---------- Sidebar ---------- */
+  buildSidebar() {
+    let html = '';
+    this.data.sections.forEach(section => {
+      const funcs = section.functions || [];
+      html += `<div class="section-item" data-section="${section.id}">`;
+      html += `<a class="section-link" data-section="${section.id}" href="#/section/${section.id}">⚙ ${section.name}</a>`;
+      html += `<ul class="func-list">`;
+      funcs.forEach(func => {
+        html += `<li><a class="func-link" href="#/function/${func.id}">${func.name}</a></li>`;
+      });
+      html += `</ul></div>`;
+    });
+    this.sidebar.innerHTML = html;
+
+    // Toggle open on click (for mobile and desktop)
+    this.sidebar.querySelectorAll('.section-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const item = link.parentElement;
+        // Toggle only if not already open and we are on this section? Better to always toggle
+        item.classList.toggle('open');
+        // Close others
+        this.sidebar.querySelectorAll('.section-item').forEach(other => {
+          if (other !== item) other.classList.remove('open');
+        });
+      });
+    });
+    // Prevent function links from toggling parent
+    this.sidebar.querySelectorAll('.func-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Also close sidebar on mobile? later
+      });
+    });
   }
 
-  renderView() {
-    const route = this.getRoute();
-    const query = this.state.searchQuery;
+  highlightSidebar(route) {
+    this.sidebar.querySelectorAll('.section-link, .func-link').forEach(el => el.classList.remove('active'));
+    if (route.page === 'section') {
+      const link = this.sidebar.querySelector(`.section-link[data-section="${route.id}"]`);
+      if (link) {
+        link.classList.add('active');
+        const item = link.closest('.section-item');
+        if (item) item.classList.add('open');
+      }
+    } else if (route.page === 'function') {
+      // Find the function link and its parent section
+      const funcLink = this.sidebar.querySelector(`.func-link[href="#/function/${route.id}"]`);
+      if (funcLink) {
+        funcLink.classList.add('active');
+        const item = funcLink.closest('.section-item');
+        if (item) item.classList.add('open');
+        // Also highlight section link
+        const sectionLink = item?.querySelector('.section-link');
+        if (sectionLink) sectionLink.classList.add('active');
+      }
+    }
+  }
 
-    if (query && route.page === 'home') {
-      this.renderSearchResults(query);
-      this.renderSidebar(route);
+  /* ---------- Render ---------- */
+  render() {
+    const { searchQuery, route } = this.state;
+
+    // If search query active, show results instead of route
+    if (searchQuery && route.page === 'home') {
+      this.renderSearchResults(searchQuery);
+      this.highlightSidebar(route); // no highlight
       return;
     }
 
+    // Clear search query if navigating to a section/function
     switch (route.page) {
       case 'home': this.renderHome(); break;
       case 'section': this.renderSection(route.id); break;
       case 'function': this.renderFunction(route.id); break;
       default: this.renderHome();
     }
-    this.renderSidebar(route);
-    if (window.innerWidth <= 768) this.cache.sidebar.classList.remove('open');
-
-    if (window.hljs) {
-      document.querySelectorAll('pre code').forEach(block => {
-        hljs.highlightElement(block);
-      });
-    }
+    this.highlightSidebar(route);
   }
 
-  renderSidebar(route) {
-    const nav = this.cache.sectionNav;
-    let html = `<a class="home-link" href="#/"><span class="home-icon">⌂</span>Home</a>`;
-    html += `<h2>Sections</h2><ul class="nav-list">`;
-    this.state.sections.forEach(section => {
-      const isActive = (route.page === 'section' && route.id === section.id) || 
-                       (route.page === 'function' && this.getSectionOfFunction(route.id) === section.id);
-      html += `<li class="nav-section ${isActive ? 'open' : ''}">`;
-      html += `<a href="#/section/${section.id}" class="nav-section-header ${isActive ? 'active' : ''}">⚙ ${section.name}</a>`;
-      html += `<ul class="nav-functions">`;
-      section.functions.forEach(funcId => {
-        const func = this.state.functions[funcId];
-        if (func) {
-          const isFuncActive = route.page === 'function' && route.id === funcId;
-          html += `<li><a href="#/function/${funcId}" class="nav-function-link ${isFuncActive ? 'active' : ''}">${func.name}</a></li>`;
-        }
-      });
-      html += `</ul></li>`;
-    });
-    html += `</ul>`;
-    nav.innerHTML = html;
-  }
-
-  getSectionOfFunction(funcId) {
-    for (const sec of this.state.sections) {
-      if (sec.functions.includes(funcId)) return sec.id;
-    }
-    return null;
+  handleRoute() {
+    this.render();
   }
 
   renderHome() {
-    let html = `<div class="view-container hero">`;
-    html += `<h2>Crypto Module Documentation</h2>`;
-    html += `<p>Comprehensive reference for the cryptographic subsystem. Explore available sections and their implementations.</p>`;
-    html += `<div class="sections-grid">`;
-    this.state.sections.forEach(sec => {
-      const funcCount = sec.functions.length;
-      html += `<a href="#/section/${sec.id}" class="section-card">`;
-      html += `<h3>${sec.name}</h3>`;
-      html += `<p>${funcCount} function${funcCount !== 1 ? 's' : ''}</p>`;
-      html += `</a>`;
+    let html = '<div class="hero"><h2>Crypto Module Documentation</h2><p>Comprehensive reference of cryptographic functions.</p>';
+    html += '<div class="section-grid">';
+    this.data.sections.forEach(section => {
+      const count = section.functions.length;
+      html += `<a href="#/section/${section.id}" class="section-card"><h3>${section.name}</h3><p>${count} function${count!==1?'s':''}</p></a>`;
     });
-    html += `</div></div>`;
-    this.cache.mainContent.innerHTML = html;
+    html += '</div></div>';
+    this.content.innerHTML = html;
   }
 
   renderSection(sectionId) {
-    const section = this.state.sections.find(s => s.id === sectionId);
+    const section = this.data.sections.find(s => s.id === sectionId);
     if (!section) return this.renderHome();
-    let html = `<div class="view-container section-header"><h2>${section.name}</h2></div>`;
-    html += `<div class="functions-grid">`;
-    section.functions.forEach(funcId => {
-      const func = this.state.functions[funcId];
-      if (func) html += this.renderFunctionCard(func);
+    let html = `<h2>${section.name}</h2><div class="function-grid">`;
+    section.functions.forEach(func => {
+      html += this.renderFunctionCard(func);
     });
     html += `</div>`;
-    this.cache.mainContent.innerHTML = html;
+    this.content.innerHTML = html;
   }
 
   renderFunctionCard(func) {
     return `
       <a href="#/function/${func.id}" class="function-card">
-        <div class="card-title">${func.name} <span class="badge">${func.metadata.crypto_version || ''}</span></div>
-        <div class="metadata">
-          <span>Author: ${func.metadata.author}</span>
-        </div>
-        <p class="description">${func.description.short}</p>
-        <div class="tags">${(func.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        <div class="name">${func.name} <span class="badge">${func.metadata?.crypto_version || ''}</span></div>
+        <div class="meta">Author: ${func.metadata?.author || ''}</div>
+        <div class="desc">${func.description.short}</div>
+        <div class="tags">${(func.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
       </a>
     `;
   }
 
   renderFunction(funcId) {
-    const func = this.state.functions[funcId];
+    const func = this.data.sections.flatMap(s => s.functions).find(f => f.id === funcId);
     if (!func) return this.renderHome();
-    let html = `<div class="view-container function-detail">`;
-    html += `<div class="card-title">${func.name} <span class="badge">${func.metadata.crypto_version || ''}</span></div>`;
-    html += `<div class="metadata">`;
-    html += `<span>Author: ${func.metadata.author}</span>`;
-    html += `<span>Version: ${func.metadata.os_version || 'N/A'}</span>`;
-    html += `</div>`;
+    let html = `<div class="function-detail"><h2>${func.name} <span class="badge">${func.metadata?.crypto_version || ''}</span></h2>`;
+    html += `<div class="meta">Author: ${func.metadata?.author} · Version: ${func.metadata?.os_version || 'N/A'}</div>`;
     html += `<p>${func.description.full}</p>`;
 
-    if (func.vulnerabilities && func.vulnerabilities.length) {
-      html += `<div class="detail-section"><h3>Security Considerations</h3><ul>`;
-      func.vulnerabilities.forEach(v => html += `<li>${v}</li>`);
-      html += `</ul></div>`;
+    if (func.vulnerabilities?.length) {
+      html += `<div class="detail-section"><h3>Security Considerations</h3><ul>${func.vulnerabilities.map(v=>`<li>${v}</li>`).join('')}</ul></div>`;
     }
-
     if (func.code_examples) {
       html += `<div class="detail-section"><h3>Code Examples</h3>`;
-      if (func.code_examples.rust) {
-        html += `<div class="code-block"><pre><code class="language-rust">${this.escapeHtml(func.code_examples.rust)}</code></pre><button class="copy-btn" title="Copy">⧉</button></div>`;
-      }
-      if (func.code_examples.c) {
-        html += `<div class="code-block"><pre><code class="language-c">${this.escapeHtml(func.code_examples.c)}</code></pre><button class="copy-btn" title="Copy">⧉</button></div>`;
-      }
+      if (func.code_examples.rust) html += this.codeBlock(func.code_examples.rust, 'rust');
+      if (func.code_examples.c) html += this.codeBlock(func.code_examples.c, 'c');
       html += `</div>`;
     }
-
-    html += `<div class="detail-section">`;
     html += `<a href="${func.implementation_url}" target="_blank" class="source-link">Source code →</a>`;
-    html += `</div>`;
-
-    if (func.contributors && func.contributors.length) {
+    if (func.contributors?.length) {
       html += `<div class="detail-section"><h3>Contributors</h3><div class="contributors">`;
-      func.contributors.forEach(user => {
-        html += `<a href="https://github.com/${user}" target="_blank" title="${user}"><img class="contributor-avatar" src="https://github.com/${user}.png" alt="${user}"></a>`;
-      });
+      func.contributors.forEach(u => html += `<a href="https://github.com/${u}" target="_blank"><img src="https://github.com/${u}.png"></a>`);
       html += `</div></div>`;
     }
-
     html += `</div>`;
-    this.cache.mainContent.innerHTML = html;
+    this.content.innerHTML = html;
+    this.attachCopyButtons();
+  }
 
-    requestAnimationFrame(() => {
-      this.cache.mainContent.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const codeBlock = btn.closest('.code-block').querySelector('code');
-          if (codeBlock) {
-            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
-              btn.classList.add('copied');
-              setTimeout(() => btn.classList.remove('copied'), 1500);
-            });
-          }
+  codeBlock(code, lang) {
+    const escaped = this.escapeHtml(code);
+    return `<div class="code-block"><pre><code>${escaped}</code></pre><button class="copy-btn">⧉</button></div>`;
+  }
+
+  attachCopyButtons() {
+    this.content.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const code = btn.previousElementSibling?.textContent || '';
+        navigator.clipboard.writeText(code).then(() => {
+          btn.classList.add('copied');
+          setTimeout(() => btn.classList.remove('copied'), 1500);
         });
       });
     });
   }
 
   renderSearchResults(query) {
-    const allFuncs = Object.values(this.state.functions);
-    const results = allFuncs.filter(func => {
-      const searchData = `${func.name} ${func.description.short} ${(func.tags || []).join(' ')}`.toLowerCase();
-      return searchData.includes(query);
+    const allFuncs = this.data.sections.flatMap(s => s.functions);
+    const results = allFuncs.filter(f => {
+      const text = `${f.name} ${f.description.short} ${(f.tags||[]).join(' ')}`.toLowerCase();
+      return text.includes(query);
     });
-    let html = `<div class="view-container"><div class="section-header"><h2>Search Results</h2></div>`;
-    if (results.length === 0) {
-      html += `<p>No functions found matching "${this.escapeHtml(query)}".</p>`;
-    } else {
-      html += `<div class="functions-grid">`;
-      results.forEach(func => html += this.renderFunctionCard(func));
+    let html = `<h2>Search Results</h2>`;
+    if (results.length === 0) html += `<p>No functions found.</p>`;
+    else {
+      html += `<div class="function-grid">`;
+      results.forEach(f => html += this.renderFunctionCard(f));
       html += `</div>`;
     }
-    html += `</div>`;
-    this.cache.mainContent.innerHTML = html;
+    this.content.innerHTML = html;
   }
 
   escapeHtml(text) {
     return text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 }
-
-document.addEventListener('DOMContentLoaded', () => new CryptoDocApp());
