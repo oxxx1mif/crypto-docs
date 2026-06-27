@@ -60,29 +60,34 @@ class CryptoApp {
     });
     this.sidebar.innerHTML = html;
 
+    // Раскрытие/сворачивание по клику на раздел
     this.sidebar.querySelectorAll('.section-link').forEach(link => {
       link.addEventListener('click', (e) => {
         const item = link.parentElement;
-        item.classList.toggle('open');
-        this.sidebar.querySelectorAll('.section-item').forEach(other => {
-          if (other !== item) other.classList.remove('open');
-        });
+        const isOpen = item.classList.contains('open');
+        // Закрываем все
+        this.sidebar.querySelectorAll('.section-item').forEach(el => el.classList.remove('open'));
+        // Открываем только если был закрыт
+        if (!isOpen) item.classList.add('open');
+        // Навигация произойдёт по ссылке, но мы оставили hash
       });
     });
+    // Предотвращаем всплытие клика по функциям
     this.sidebar.querySelectorAll('.func-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
+      link.addEventListener('click', (e) => e.stopPropagation());
     });
   }
 
   highlightSidebar(route) {
     this.sidebar.querySelectorAll('.section-link, .func-link').forEach(el => el.classList.remove('active'));
+    // Закрываем все разделы, чтобы потом открыть нужный
+    this.sidebar.querySelectorAll('.section-item').forEach(el => el.classList.remove('open'));
+
     if (route.page === 'section') {
       const link = this.sidebar.querySelector(`.section-link[data-section="${route.id}"]`);
       if (link) {
         link.classList.add('active');
-        link.closest('.section-item')?.classList.add('open');
+        link.parentElement.classList.add('open');
       }
     } else if (route.page === 'function') {
       const funcLink = this.sidebar.querySelector(`.func-link[href="#/function/${route.id}"]`);
@@ -91,7 +96,8 @@ class CryptoApp {
         const item = funcLink.closest('.section-item');
         if (item) {
           item.classList.add('open');
-          item.querySelector('.section-link')?.classList.add('active');
+          const sectionLink = item.querySelector('.section-link');
+          if (sectionLink) sectionLink.classList.add('active');
         }
       }
     }
@@ -114,9 +120,7 @@ class CryptoApp {
     this.highlightSidebar(route);
   }
 
-  handleRoute() {
-    this.render();
-  }
+  handleRoute() { this.render(); }
 
   renderHome() {
     let html = '<div class="hero"><h2>Crypto Module Documentation</h2><p>Comprehensive reference of cryptographic functions.</p>';
@@ -133,9 +137,7 @@ class CryptoApp {
     const section = this.data.sections.find(s => s.id === sectionId);
     if (!section) return this.renderHome();
     let html = `<h2>${section.name}</h2><div class="function-grid">`;
-    section.functions.forEach(func => {
-      html += this.renderFunctionCard(func);
-    });
+    section.functions.forEach(func => html += this.renderFunctionCard(func));
     html += `</div>`;
     this.content.innerHTML = html;
   }
