@@ -37,7 +37,6 @@ class CryptoDocApp {
     });
     this.cache.searchInput.addEventListener('input', (e) => {
       this.state.searchQuery = e.target.value.trim().toLowerCase();
-      // При вводе возвращаемся на домашнюю страницу поиска
       if (this.state.searchQuery) {
         window.location.hash = '#/';
       } else {
@@ -83,7 +82,6 @@ class CryptoDocApp {
 
   handleRoute() {
     const route = this.getRoute();
-    // При переходе на конкретную страницу сбрасываем поиск
     if (route.page === 'function' || route.page === 'section') {
       this.state.searchQuery = '';
       this.cache.searchInput.value = '';
@@ -95,7 +93,6 @@ class CryptoDocApp {
     const route = this.getRoute();
     const query = this.state.searchQuery;
 
-    // Показываем результаты поиска только на домашней странице (или если есть запрос, но не глубже)
     if (query && route.page === 'home') {
       this.renderSearchResults(query);
       this.renderSidebar(route);
@@ -111,7 +108,6 @@ class CryptoDocApp {
     this.renderSidebar(route);
     if (window.innerWidth <= 768) this.cache.sidebar.classList.remove('open');
 
-    // Подсветка синтаксиса после рендера
     if (window.hljs) {
       document.querySelectorAll('pre code').forEach(block => {
         hljs.highlightElement(block);
@@ -121,14 +117,13 @@ class CryptoDocApp {
 
   renderSidebar(route) {
     const nav = this.cache.sectionNav;
-    let html = `<a class="home-link" href="#/"><span class="material-icons">home</span>Home</a>`;
+    let html = `<a class="home-link" href="#/"><span class="home-icon">⌂</span>Home</a>`;
     html += `<h2>Sections</h2><ul class="nav-list">`;
     this.state.sections.forEach(section => {
       const isActive = (route.page === 'section' && route.id === section.id) || 
                        (route.page === 'function' && this.getSectionOfFunction(route.id) === section.id);
       html += `<li class="nav-section ${isActive ? 'open' : ''}">`;
-      html += `<a href="#/section/${section.id}" class="nav-section-header ${isActive ? 'active' : ''}">`;
-      html += `<span class="material-icons">category</span>${section.name}</a>`;
+      html += `<a href="#/section/${section.id}" class="nav-section-header ${isActive ? 'active' : ''}">⚙ ${section.name}</a>`;
       html += `<ul class="nav-functions">`;
       section.functions.forEach(funcId => {
         const func = this.state.functions[funcId];
@@ -184,7 +179,7 @@ class CryptoDocApp {
       <a href="#/function/${func.id}" class="function-card">
         <div class="card-title">${func.name} <span class="badge">${func.metadata.crypto_version || ''}</span></div>
         <div class="metadata">
-          <span><span class="material-icons">person</span>${func.metadata.author}</span>
+          <span>Author: ${func.metadata.author}</span>
         </div>
         <p class="description">${func.description.short}</p>
         <div class="tags">${(func.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
@@ -198,8 +193,8 @@ class CryptoDocApp {
     let html = `<div class="view-container function-detail">`;
     html += `<div class="card-title">${func.name} <span class="badge">${func.metadata.crypto_version || ''}</span></div>`;
     html += `<div class="metadata">`;
-    html += `<span><span class="material-icons">person</span>${func.metadata.author}</span>`;
-    html += `<span><span class="material-icons">package</span>${func.metadata.os_version || 'N/A'}</span>`;
+    html += `<span>Author: ${func.metadata.author}</span>`;
+    html += `<span>Version: ${func.metadata.os_version || 'N/A'}</span>`;
     html += `</div>`;
     html += `<p>${func.description.full}</p>`;
 
@@ -212,16 +207,16 @@ class CryptoDocApp {
     if (func.code_examples) {
       html += `<div class="detail-section"><h3>Code Examples</h3>`;
       if (func.code_examples.rust) {
-        html += `<div class="code-block"><pre><code class="language-rust">${this.escapeHtml(func.code_examples.rust)}</code></pre><button class="copy-btn" title="Copy"><span class="material-icons">content_copy</span></button></div>`;
+        html += `<div class="code-block"><pre><code class="language-rust">${this.escapeHtml(func.code_examples.rust)}</code></pre><button class="copy-btn" title="Copy">⧉</button></div>`;
       }
       if (func.code_examples.c) {
-        html += `<div class="code-block"><pre><code class="language-c">${this.escapeHtml(func.code_examples.c)}</code></pre><button class="copy-btn" title="Copy"><span class="material-icons">content_copy</span></button></div>`;
+        html += `<div class="code-block"><pre><code class="language-c">${this.escapeHtml(func.code_examples.c)}</code></pre><button class="copy-btn" title="Copy">⧉</button></div>`;
       }
       html += `</div>`;
     }
 
     html += `<div class="detail-section">`;
-    html += `<a href="${func.implementation_url}" target="_blank" class="source-link"><span class="material-icons">open_in_new</span>Source code</a>`;
+    html += `<a href="${func.implementation_url}" target="_blank" class="source-link">Source code →</a>`;
     html += `</div>`;
 
     if (func.contributors && func.contributors.length) {
@@ -235,7 +230,6 @@ class CryptoDocApp {
     html += `</div>`;
     this.cache.mainContent.innerHTML = html;
 
-    // Прикрепляем обработчики кнопок копирования
     requestAnimationFrame(() => {
       this.cache.mainContent.querySelectorAll('.copy-btn').forEach(btn => {
         btn.addEventListener('click', () => {
