@@ -179,7 +179,7 @@ class CryptoApp {
     this.content.innerHTML = html;
     this.attachCopyButtons();
 
-    // Подсветка синтаксиса для всех блоков кода
+    // Принудительная подсветка синтаксиса
     if (window.hljs) {
       document.querySelectorAll('pre code').forEach(block => {
         hljs.highlightElement(block);
@@ -218,7 +218,6 @@ class CryptoApp {
       html += `</div>`;
     }
     this.content.innerHTML = html;
-    // На случай, если в будущем в результатах поиска появятся сниппеты кода
     if (window.hljs) {
       document.querySelectorAll('pre code').forEach(block => {
         hljs.highlightElement(block);
