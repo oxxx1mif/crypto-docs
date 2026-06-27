@@ -1,244 +1,241 @@
-const UI_STRINGS = {
-  ru: {
-    searchPlaceholder: 'Поиск функций...',
-    sectionsTitle: 'Разделы',
-    sourceCode: 'Исходный код',
-    contributors: 'Авторы',
-    noFunctions: 'Функции не найдены',
-    loading: 'Загрузка...',
-    error: 'Ошибка загрузки данных',
-  },
-  en: {
-    searchPlaceholder: 'Search functions...',
-    sectionsTitle: 'Sections',
-    sourceCode: 'Source code',
-    contributors: 'Contributors',
-    noFunctions: 'No functions found',
-    loading: 'Loading...',
-    error: 'Error loading data',
-  }
-};
-
 class CryptoDocApp {
   constructor() {
-    this.currentLang = localStorage.getItem('crypto-docs-lang') || 'en';
-    this.currentTheme = localStorage.getItem('crypto-docs-theme') || 'dark';
-    this.data = null;
-    this.activeSectionId = null;
-
-    this.sidebar = document.getElementById('sidebar');
-    this.menuToggle = document.getElementById('menu-toggle');
-    this.searchInput = document.getElementById('search-input');
-    this.themeBtn = document.getElementById('theme-btn');
-    this.langBtn = document.getElementById('lang-btn');
-    this.langLabel = document.getElementById('lang-label');
-    this.sectionNav = document.getElementById('section-nav');
-    this.mainContent = document.getElementById('main-content');
-
+    this.state = {
+      sections: [],
+      functions: {},       // key: funcId -> data
+      currentView: null,
+      searchQuery: '',
+    };
+    this.cache = {
+      sectionNav: document.getElementById('section-nav'),
+      mainContent: document.getElementById('main-content'),
+      searchInput: document.getElementById('search-input'),
+      sidebar: document.getElementById('sidebar'),
+      menuToggle: document.getElementById('menu-toggle'),
+    };
     this.init();
   }
 
   init() {
-    this.applyTheme();
-    this.applyLanguage();
+    this.bindEvents();
+    this.loadData().then(() => {
+      this.handleRoute();
+      window.addEventListener('hashchange', () => this.handleRoute());
+    });
+  }
 
-    this.menuToggle.addEventListener('click', () => this.toggleSidebar());
-    this.searchInput.addEventListener('input', () => this.handleSearch());
-    this.themeBtn.addEventListener('click', () => this.toggleTheme());
-    this.langBtn.addEventListener('click', () => this.toggleLanguage());
-
+  bindEvents() {
+    this.cache.menuToggle.addEventListener('click', () => {
+      this.cache.sidebar.classList.toggle('open');
+    });
     document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 768 && this.sidebar.classList.contains('open')) {
-        if (!this.sidebar.contains(e.target) && e.target !== this.menuToggle && !this.menuToggle.contains(e.target)) {
-          this.sidebar.classList.remove('open');
+      if (window.innerWidth <= 768 && this.cache.sidebar.classList.contains('open')) {
+        if (!this.cache.sidebar.contains(e.target) && e.target !== this.cache.menuToggle && !this.cache.menuToggle.contains(e.target)) {
+          this.cache.sidebar.classList.remove('open');
         }
       }
     });
-
-    this.loadData();
+    this.cache.searchInput.addEventListener('input', (e) => {
+      this.state.searchQuery = e.target.value.trim().toLowerCase();
+      this.renderView();
+    });
   }
 
   async loadData() {
     try {
-      const response = await fetch('./data/functions.json');
-      if (!response.ok) throw new Error('functions.json not found');
-      this.data = await response.json();
-      this.renderAll();
-      this.observeSections();
-    } catch (error) {
-      this.mainContent.innerHTML = `<p>${UI_STRINGS[this.currentLang].error}</p>`;
+      const listRes = await fetch('./data/sections-list.json');
+      const sectionIds = await listRes.json();
+      const sections = [];
+      const functions = {};
+      for (const id of sectionIds) {
+        const secRes = await fetch(`./data/sections/${id}.json`);
+        const sec = await secRes.json();
+        sections.push(sec);
+        for (const funcId of sec.functions) {
+          if (!functions[funcId]) {
+            const funcRes = await fetch(`./data/functions/${funcId}.json`);
+            functions[funcId] = await funcRes.json();
+          }
+        }
+      }
+      this.state.sections = sections;
+      this.state.functions = functions;
+    } catch (err) {
+      console.error('Data loading error:', err);
+      this.cache.mainContent.innerHTML = '<p>Error loading documentation.</p>';
     }
   }
 
-  renderAll() {
-    this.renderNavigation();
-    this.renderSections();
+  getRoute() {
+    const hash = window.location.hash.slice(1) || '/';
+    const parts = hash.split('/').filter(Boolean);
+    if (parts.length === 0) return { page: 'home' };
+    if (parts[0] === 'section' && parts[1]) return { page: 'section', id: parts[1] };
+    if (parts[0] === 'function' && parts[1]) return { page: 'function', id: parts[1] };
+    return { page: 'home' };
   }
 
-  renderNavigation() {
-    if (!this.data || !this.data.sections) return;
-    const t = UI_STRINGS[this.currentLang];
-    let html = `<h2>${t.sectionsTitle}</h2><ul class="nav-list">`;
-    this.data.sections.forEach(section => {
-      html += `
-        <li>
-          <a href="#section-${section.id}" class="nav-link" data-section="${section.id}">
-            <span class="material-icons">category</span>
-            ${section.name[this.currentLang]}
-          </a>
-        </li>`;
+  handleRoute() {
+    this.renderView();
+  }
+
+  renderView() {
+    const route = this.getRoute();
+    const query = this.state.searchQuery;
+    if (query) {
+      this.renderSearchResults(query);
+      return;
+    }
+    switch (route.page) {
+      case 'home': this.renderHome(); break;
+      case 'section': this.renderSection(route.id); break;
+      case 'function': this.renderFunction(route.id); break;
+      default: this.renderHome();
+    }
+    this.renderSidebar(route);
+    this.cache.sidebar.classList.remove('open');
+  }
+
+  renderSidebar(route) {
+    const nav = this.cache.sectionNav;
+    let html = `<a class="home-link" href="#/"><span class="material-icons">home</span>Home</a>`;
+    html += `<h2>Sections</h2><ul class="nav-list">`;
+    this.state.sections.forEach(section => {
+      const isActive = (route.page === 'section' && route.id === section.id) || 
+                       (route.page === 'function' && this.getSectionOfFunction(route.id) === section.id);
+      html += `<li class="nav-section ${isActive ? 'open' : ''}">`;
+      html += `<a href="#/section/${section.id}" class="nav-section-header ${isActive ? 'active' : ''}">`;
+      html += `<span class="material-icons">category</span>${section.name}</a>`;
+      html += `<ul class="nav-functions">`;
+      section.functions.forEach(funcId => {
+        const func = this.state.functions[funcId];
+        if (func) {
+          const isFuncActive = route.page === 'function' && route.id === funcId;
+          html += `<li><a href="#/function/${funcId}" class="nav-function-link ${isFuncActive ? 'active' : ''}">${func.name}</a></li>`;
+        }
+      });
+      html += `</ul></li>`;
     });
     html += `</ul>`;
-    this.sectionNav.innerHTML = html;
-
-    this.sectionNav.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        this.setActiveNav(link.dataset.section);
-        if (window.innerWidth <= 768) this.sidebar.classList.remove('open');
-      });
-    });
+    nav.innerHTML = html;
   }
 
-  setActiveNav(sectionId) {
-    this.sectionNav.querySelectorAll('.nav-link').forEach(link => {
-      link.classList.toggle('active', link.dataset.section === sectionId);
-    });
-    this.activeSectionId = sectionId;
+  getSectionOfFunction(funcId) {
+    for (const sec of this.state.sections) {
+      if (sec.functions.includes(funcId)) return sec.id;
+    }
+    return null;
   }
 
-  renderSections() {
-    if (!this.data || !this.data.sections) return;
-    const lang = this.currentLang;
-    const t = UI_STRINGS[lang];
-    let html = '';
+  renderHome() {
+    let html = `<div class="view-container hero">`;
+    html += `<h2>Crypto Module Documentation</h2>`;
+    html += `<p>Comprehensive reference for the cryptographic subsystem. Explore available sections and their implementations.</p>`;
+    html += `<div class="sections-grid">`;
+    this.state.sections.forEach(sec => {
+      const funcCount = sec.functions.length;
+      html += `<a href="#/section/${sec.id}" class="section-card">`;
+      html += `<h3>${sec.name}</h3>`;
+      html += `<p>${funcCount} function${funcCount !== 1 ? 's' : ''}</p>`;
+      html += `</a>`;
+    });
+    html += `</div></div>`;
+    this.cache.mainContent.innerHTML = html;
+  }
 
-    this.data.sections.forEach(section => {
-      html += `<section id="section-${section.id}" class="section">
-        <div class="section-header">
-          <h2>${section.name[lang]}</h2>
-        </div>
-        <div class="functions-grid">`;
-
-      if (!section.functions || section.functions.length === 0) {
-        html += `<p>${t.noFunctions}</p>`;
-      } else {
-        section.functions.forEach(func => {
-          html += this.renderFunctionCard(func);
-        });
+  renderSection(sectionId) {
+    const section = this.state.sections.find(s => s.id === sectionId);
+    if (!section) return this.renderHome();
+    let html = `<div class="view-container section-header"><h2>${section.name}</h2></div>`;
+    html += `<div class="functions-grid">`;
+    section.functions.forEach(funcId => {
+      const func = this.state.functions[funcId];
+      if (func) {
+        html += this.renderFunctionCard(func);
       }
-
-      html += `</div></section>`;
     });
-
-    this.mainContent.innerHTML = html;
+    html += `</div>`;
+    this.cache.mainContent.innerHTML = html;
   }
 
   renderFunctionCard(func) {
-    const lang = this.currentLang;
-    const t = UI_STRINGS[lang];
-    const name = func.name[lang] || '';
-    const desc = func.description[lang] || '';
-    const tags = func.tags || [];
-    const metadata = func.metadata;
-    const contributors = func.contributors || [];
-
     return `
-      <article class="function-card" data-function-id="${func.id}" data-search-content="${this.getSearchText(func)}">
-        <div class="card-title">
-          ${this.escapeHtml(name)}
-          ${metadata && metadata.crypto_version ? `<span class="badge">${this.escapeHtml(metadata.crypto_version)}</span>` : ''}
-        </div>
+      <a href="#/function/${func.id}" class="function-card">
+        <div class="card-title">${func.name} <span class="badge">${func.metadata.crypto_version || ''}</span></div>
         <div class="metadata">
-          <span title="Author"><span class="material-icons">person</span>${metadata ? this.escapeHtml(metadata.author || '—') : '—'}</span>
-          <span title="OS version"><span class="material-icons">package</span>${metadata ? this.escapeHtml(metadata.os_version || '—') : '—'}</span>
+          <span><span class="material-icons">person</span>${func.metadata.author}</span>
         </div>
-        <p class="description">${this.escapeHtml(desc)}</p>
-        ${func.code_snippet ? `<div class="code-block"><pre>${this.escapeHtml(func.code_snippet)}</pre></div>` : ''}
-        ${tags.length ? `<div class="tags">${tags.map(tag => `<span class="tag">${this.escapeHtml(tag)}</span>`).join('')}</div>` : ''}
-        ${func.implementation_url ? `<a href="${this.escapeHtml(func.implementation_url)}" target="_blank" rel="noopener" class="source-link"><span class="material-icons">open_in_new</span>${t.sourceCode}</a>` : ''}
-        ${contributors.length ? `
-          <div class="contributors">
-            <span class="contributors-label">${t.contributors}:</span>
-            ${contributors.map(user => `
-              <a href="https://github.com/${this.escapeHtml(user)}" target="_blank" rel="noopener" title="@${this.escapeHtml(user)}">
-                <img class="contributor-avatar" src="https://github.com/${this.escapeHtml(user)}.png" alt="${this.escapeHtml(user)}" loading="lazy">
-              </a>
-            `).join('')}
-          </div>` : ''}
-      </article>
+        <p class="description">${func.description.short}</p>
+        <div class="tags">${(func.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+      </a>
     `;
   }
 
-  getSearchText(func) {
-    const ruName = (func.name.ru || '').toLowerCase();
-    const enName = (func.name.en || '').toLowerCase();
-    const ruDesc = (func.description.ru || '').toLowerCase();
-    const enDesc = (func.description.en || '').toLowerCase();
-    const tags = (func.tags || []).join(' ').toLowerCase();
-    return `${ruName} ${enName} ${ruDesc} ${enDesc} ${tags}`;
-  }
+  renderFunction(funcId) {
+    const func = this.state.functions[funcId];
+    if (!func) return this.renderHome();
+    let html = `<div class="view-container function-detail">`;
+    html += `<div class="card-title">${func.name} <span class="badge">${func.metadata.crypto_version || ''}</span></div>`;
+    html += `<div class="metadata">`;
+    html += `<span><span class="material-icons">person</span>${func.metadata.author}</span>`;
+    html += `<span><span class="material-icons">package</span>${func.metadata.os_version || 'N/A'}</span>`;
+    html += `</div>`;
+    html += `<p>${func.description.full}</p>`;
 
-  escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
+    if (func.vulnerabilities && func.vulnerabilities.length) {
+      html += `<div class="detail-section"><h3>Security Considerations</h3><ul>`;
+      func.vulnerabilities.forEach(v => html += `<li>${v}</li>`);
+      html += `</ul></div>`;
+    }
 
-  handleSearch() {
-    const query = this.searchInput.value.toLowerCase().trim();
-    const cards = this.mainContent.querySelectorAll('.function-card');
-    cards.forEach(card => {
-      const data = card.getAttribute('data-search-content') || '';
-      card.classList.toggle('hidden', query !== '' && !data.includes(query));
-    });
-    this.mainContent.querySelectorAll('.section').forEach(section => {
-      const visible = section.querySelectorAll('.function-card:not(.hidden)');
-      section.classList.toggle('hidden', visible.length === 0);
-    });
-  }
+    if (func.code_examples) {
+      html += `<div class="detail-section"><h3>Code Examples</h3>`;
+      if (func.code_examples.rust) {
+        html += `<h4>Rust</h4><div class="code-block"><pre>${this.escapeHtml(func.code_examples.rust)}</pre></div>`;
+      }
+      if (func.code_examples.c) {
+        html += `<h4>C</h4><div class="code-block"><pre>${this.escapeHtml(func.code_examples.c)}</pre></div>`;
+      }
+      html += `</div>`;
+    }
 
-  toggleTheme() {
-    this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('crypto-docs-theme', this.currentTheme);
-    this.applyTheme();
-  }
+    html += `<div class="detail-section">`;
+    html += `<a href="${func.implementation_url}" target="_blank" class="source-link"><span class="material-icons">open_in_new</span>Source code</a>`;
+    html += `</div>`;
 
-  applyTheme() {
-    document.documentElement.setAttribute('data-theme', this.currentTheme);
-    const icon = this.themeBtn.querySelector('.material-icons');
-    if (icon) icon.textContent = this.currentTheme === 'dark' ? 'light_mode' : 'dark_mode';
-  }
-
-  toggleLanguage() {
-    this.currentLang = this.currentLang === 'en' ? 'ru' : 'en';
-    localStorage.setItem('crypto-docs-lang', this.currentLang);
-    this.applyLanguage();
-    if (this.data) this.renderAll();
-  }
-
-  applyLanguage() {
-    this.langLabel.textContent = this.currentLang.toUpperCase();
-    const t = UI_STRINGS[this.currentLang];
-    this.searchInput.placeholder = t.searchPlaceholder;
-  }
-
-  toggleSidebar() {
-    this.sidebar.classList.toggle('open');
-  }
-
-  observeSections() {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const id = entry.target.id.replace('section-', '');
-          this.setActiveNav(id);
-        }
+    if (func.contributors && func.contributors.length) {
+      html += `<div class="detail-section"><h3>Contributors</h3><div class="contributors">`;
+      func.contributors.forEach(user => {
+        html += `<a href="https://github.com/${user}" target="_blank" title="${user}"><img class="contributor-avatar" src="https://github.com/${user}.png" alt="${user}"></a>`;
       });
-    }, { threshold: 0.3 });
-    document.querySelectorAll('.section').forEach(section => observer.observe(section));
+      html += `</div></div>`;
+    }
+
+    html += `</div>`;
+    this.cache.mainContent.innerHTML = html;
+  }
+
+  renderSearchResults(query) {
+    const allFuncs = Object.values(this.state.functions);
+    const results = allFuncs.filter(func => {
+      const searchData = `${func.name} ${func.description.short} ${(func.tags || []).join(' ')}`.toLowerCase();
+      return searchData.includes(query);
+    });
+    let html = `<div class="view-container"><div class="section-header"><h2>Search Results</h2></div>`;
+    if (results.length === 0) {
+      html += `<p>No functions found matching "${query}".</p>`;
+    } else {
+      html += `<div class="functions-grid">`;
+      results.forEach(func => html += this.renderFunctionCard(func));
+      html += `</div>`;
+    }
+    html += `</div>`;
+    this.cache.mainContent.innerHTML = html;
+  }
+
+  escapeHtml(text) {
+    return text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  new CryptoDocApp();
-});
+document.addEventListener('DOMContentLoaded', () => new CryptoDocApp());

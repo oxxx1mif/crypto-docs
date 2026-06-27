@@ -1,0 +1,5 @@
+{
+  "id": "hashes",
+  "name": "Hashes",
+  "functions": ["sha256"]
+}
