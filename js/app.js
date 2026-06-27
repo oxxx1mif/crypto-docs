@@ -2,7 +2,7 @@ class CryptoDocApp {
   constructor() {
     this.state = {
       sections: [],
-      functions: {},       // key: funcId -> data
+      functions: {},
       currentView: null,
       searchQuery: '',
     };
@@ -37,6 +37,12 @@ class CryptoDocApp {
     });
     this.cache.searchInput.addEventListener('input', (e) => {
       this.state.searchQuery = e.target.value.trim().toLowerCase();
+      // При вводе возвращаемся на домашнюю страницу поиска
+      if (this.state.searchQuery) {
+        window.location.hash = '#/';
+      } else {
+        window.location.hash = window.location.hash || '#/';
+      }
       this.renderView();
     });
   }
@@ -76,16 +82,26 @@ class CryptoDocApp {
   }
 
   handleRoute() {
+    const route = this.getRoute();
+    // При переходе на конкретную страницу сбрасываем поиск
+    if (route.page === 'function' || route.page === 'section') {
+      this.state.searchQuery = '';
+      this.cache.searchInput.value = '';
+    }
     this.renderView();
   }
 
   renderView() {
     const route = this.getRoute();
     const query = this.state.searchQuery;
-    if (query) {
+
+    // Показываем результаты поиска только на домашней странице (или если есть запрос, но не глубже)
+    if (query && route.page === 'home') {
       this.renderSearchResults(query);
+      this.renderSidebar(route);
       return;
     }
+
     switch (route.page) {
       case 'home': this.renderHome(); break;
       case 'section': this.renderSection(route.id); break;
@@ -93,7 +109,14 @@ class CryptoDocApp {
       default: this.renderHome();
     }
     this.renderSidebar(route);
-    this.cache.sidebar.classList.remove('open');
+    if (window.innerWidth <= 768) this.cache.sidebar.classList.remove('open');
+
+    // Подсветка синтаксиса после рендера
+    if (window.hljs) {
+      document.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+      });
+    }
   }
 
   renderSidebar(route) {
@@ -150,9 +173,7 @@ class CryptoDocApp {
     html += `<div class="functions-grid">`;
     section.functions.forEach(funcId => {
       const func = this.state.functions[funcId];
-      if (func) {
-        html += this.renderFunctionCard(func);
-      }
+      if (func) html += this.renderFunctionCard(func);
     });
     html += `</div>`;
     this.cache.mainContent.innerHTML = html;
@@ -191,10 +212,10 @@ class CryptoDocApp {
     if (func.code_examples) {
       html += `<div class="detail-section"><h3>Code Examples</h3>`;
       if (func.code_examples.rust) {
-        html += `<h4>Rust</h4><div class="code-block"><pre>${this.escapeHtml(func.code_examples.rust)}</pre></div>`;
+        html += `<div class="code-block"><pre><code class="language-rust">${this.escapeHtml(func.code_examples.rust)}</code></pre><button class="copy-btn" title="Copy"><span class="material-icons">content_copy</span></button></div>`;
       }
       if (func.code_examples.c) {
-        html += `<h4>C</h4><div class="code-block"><pre>${this.escapeHtml(func.code_examples.c)}</pre></div>`;
+        html += `<div class="code-block"><pre><code class="language-c">${this.escapeHtml(func.code_examples.c)}</code></pre><button class="copy-btn" title="Copy"><span class="material-icons">content_copy</span></button></div>`;
       }
       html += `</div>`;
     }
@@ -213,6 +234,21 @@ class CryptoDocApp {
 
     html += `</div>`;
     this.cache.mainContent.innerHTML = html;
+
+    // Прикрепляем обработчики кнопок копирования
+    requestAnimationFrame(() => {
+      this.cache.mainContent.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const codeBlock = btn.closest('.code-block').querySelector('code');
+          if (codeBlock) {
+            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+              btn.classList.add('copied');
+              setTimeout(() => btn.classList.remove('copied'), 1500);
+            });
+          }
+        });
+      });
+    });
   }
 
   renderSearchResults(query) {
@@ -223,7 +259,7 @@ class CryptoDocApp {
     });
     let html = `<div class="view-container"><div class="section-header"><h2>Search Results</h2></div>`;
     if (results.length === 0) {
-      html += `<p>No functions found matching "${query}".</p>`;
+      html += `<p>No functions found matching "${this.escapeHtml(query)}".</p>`;
     } else {
       html += `<div class="functions-grid">`;
       results.forEach(func => html += this.renderFunctionCard(func));
