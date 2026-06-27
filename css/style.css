@@ -62,12 +62,12 @@ a:hover { opacity: 0.8; }
   width: 260px;
   background: var(--glass); backdrop-filter: var(--blur);
   border-right: 1px solid var(--border);
-  padding: 20px;
+  padding: 20px 16px;
   overflow-y: auto;
 }
 .nav-home {
   display: block; padding: 8px 12px;
-  border-radius: 12px; margin-bottom: 16px;
+  border-radius: 12px; margin-bottom: 20px;
   font-weight: 500;
 }
 .nav-home:hover { background: var(--surface); }
@@ -75,36 +75,42 @@ a:hover { opacity: 0.8; }
 .sidebar h3 {
   font-size: 0.7rem; text-transform: uppercase;
   letter-spacing: 0.1em; color: var(--text2);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  padding-left: 8px;
 }
-.sidebar .section-list {
-  list-style: none;
+.section-list { /* not used now */ }
+.section-item {
+  margin-bottom: 2px;
 }
-.sidebar .section-item {
-  margin-bottom: 4px;
-}
-.sidebar .section-link {
-  display: flex; align-items: center; gap: 8px;
+.section-link {
+  display: flex; align-items: center;
   padding: 8px 12px;
   border-radius: 12px;
   font-weight: 500;
   cursor: pointer;
+  transition: background 0.2s;
 }
-.sidebar .section-link:hover { background: var(--surface); }
-.sidebar .section-link.active { background: var(--surface); color: var(--accent); }
+.section-link:hover { background: var(--surface); }
+.section-link.active { background: var(--surface); color: var(--accent); }
 
-.sidebar .func-list {
-  list-style: none; padding-left: 20px;
+.func-list {
+  list-style: none;
+  padding-left: 24px;   /* четкий отступ для иерархии */
+  margin-top: 4px;
   display: none;
 }
-.sidebar .section-item.open .func-list { display: block; }
-.sidebar .func-link {
-  display: block; padding: 6px 12px;
-  border-radius: 12px; color: var(--text2);
-  font-size: 0.9rem; cursor: pointer;
+.section-item.open .func-list { display: block; }
+
+.func-link {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 12px;
+  color: var(--text2);
+  font-size: 0.9rem;
+  transition: background 0.2s;
 }
-.sidebar .func-link:hover,
-.sidebar .func-link.active { background: var(--surface); color: var(--text); }
+.func-link:hover,
+.func-link.active { background: var(--surface); color: var(--text); }
 
 /* Content */
 .content {
@@ -200,12 +206,15 @@ a:hover { opacity: 0.8; }
 }
 
 .contributors {
-  display: flex; align-items: center; gap: 8px; margin-top: 16px;
+  display: flex; align-items: center; gap: 12px; margin-top: 12px;
 }
 .contributors img {
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 32px; height: 32px;
+  border-radius: 50%;
   border: 2px solid var(--border);
+  object-fit: cover;
 }
+
 .hidden { display: none !important; }
 
 @media (max-width: 768px) {

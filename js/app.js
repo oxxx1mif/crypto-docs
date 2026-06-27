@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Load data
   fetch('data/functions.json')
     .then(res => res.json())
     .then(data => {
@@ -10,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 class CryptoApp {
   constructor(data) {
-    this.data = data;           // { sections: [...] }
+    this.data = data;
     this.state = {
       searchQuery: '',
       route: this.getRoute()
@@ -48,11 +47,11 @@ class CryptoApp {
 
   /* ---------- Sidebar ---------- */
   buildSidebar() {
-    let html = '';
+    let html = '<h3>Sections</h3>';
     this.data.sections.forEach(section => {
       const funcs = section.functions || [];
       html += `<div class="section-item" data-section="${section.id}">`;
-      html += `<a class="section-link" data-section="${section.id}" href="#/section/${section.id}">⚙ ${section.name}</a>`;
+      html += `<a class="section-link" data-section="${section.id}" href="#/section/${section.id}">${section.name}</a>`;
       html += `<ul class="func-list">`;
       funcs.forEach(func => {
         html += `<li><a class="func-link" href="#/function/${func.id}">${func.name}</a></li>`;
@@ -61,23 +60,18 @@ class CryptoApp {
     });
     this.sidebar.innerHTML = html;
 
-    // Toggle open on click (for mobile and desktop)
     this.sidebar.querySelectorAll('.section-link').forEach(link => {
       link.addEventListener('click', (e) => {
         const item = link.parentElement;
-        // Toggle only if not already open and we are on this section? Better to always toggle
         item.classList.toggle('open');
-        // Close others
         this.sidebar.querySelectorAll('.section-item').forEach(other => {
           if (other !== item) other.classList.remove('open');
         });
       });
     });
-    // Prevent function links from toggling parent
     this.sidebar.querySelectorAll('.func-link').forEach(link => {
       link.addEventListener('click', (e) => {
         e.stopPropagation();
-        // Also close sidebar on mobile? later
       });
     });
   }
@@ -88,19 +82,17 @@ class CryptoApp {
       const link = this.sidebar.querySelector(`.section-link[data-section="${route.id}"]`);
       if (link) {
         link.classList.add('active');
-        const item = link.closest('.section-item');
-        if (item) item.classList.add('open');
+        link.closest('.section-item')?.classList.add('open');
       }
     } else if (route.page === 'function') {
-      // Find the function link and its parent section
       const funcLink = this.sidebar.querySelector(`.func-link[href="#/function/${route.id}"]`);
       if (funcLink) {
         funcLink.classList.add('active');
         const item = funcLink.closest('.section-item');
-        if (item) item.classList.add('open');
-        // Also highlight section link
-        const sectionLink = item?.querySelector('.section-link');
-        if (sectionLink) sectionLink.classList.add('active');
+        if (item) {
+          item.classList.add('open');
+          item.querySelector('.section-link')?.classList.add('active');
+        }
       }
     }
   }
@@ -108,15 +100,11 @@ class CryptoApp {
   /* ---------- Render ---------- */
   render() {
     const { searchQuery, route } = this.state;
-
-    // If search query active, show results instead of route
     if (searchQuery && route.page === 'home') {
       this.renderSearchResults(searchQuery);
-      this.highlightSidebar(route); // no highlight
+      this.highlightSidebar(route);
       return;
     }
-
-    // Clear search query if navigating to a section/function
     switch (route.page) {
       case 'home': this.renderHome(); break;
       case 'section': this.renderSection(route.id); break;
@@ -182,7 +170,9 @@ class CryptoApp {
     html += `<a href="${func.implementation_url}" target="_blank" class="source-link">Source code →</a>`;
     if (func.contributors?.length) {
       html += `<div class="detail-section"><h3>Contributors</h3><div class="contributors">`;
-      func.contributors.forEach(u => html += `<a href="https://github.com/${u}" target="_blank"><img src="https://github.com/${u}.png"></a>`);
+      func.contributors.forEach(user => {
+        html += `<a href="https://github.com/${user}" target="_blank" title="@${user}"><img loading="lazy" src="https://github.com/${user}.png" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2220%22 fill=%22%23333%22/%3E%3Ctext x=%2220%22 y=%2226%22 text-anchor=%22middle%22 fill=%22%23fff%22 font-size=%2216%22 font-family=%22system-ui%22%3E${user[0].toUpperCase()}%3C/text%3E%3C/svg%3E'" alt="@${user}"></a>`;
+      });
       html += `</div></div>`;
     }
     html += `</div>`;
