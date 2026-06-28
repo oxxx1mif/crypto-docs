@@ -10,7 +10,7 @@
           "metadata": {
             "author": "oxxx1mif",
             "crypto_version": "v0.1",
-            "os_version": " "
+            "os_version": "no"
           },
           "description": {
             "short": "Cryptographic hash function producing a 256-bit digest.",
