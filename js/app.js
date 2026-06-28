@@ -59,7 +59,6 @@ class CryptoApp {
     });
     this.sidebar.innerHTML = html;
 
-    // Раскрытие подменю
     this.sidebar.querySelectorAll('.section-link').forEach(link => {
       link.addEventListener('click', (e) => {
         const item = link.parentElement;
@@ -99,9 +98,8 @@ class CryptoApp {
 
   render() {
     const { searchQuery, route } = this.state;
-    // Перезапускаем анимацию появления
     this.content.style.animation = 'none';
-    this.content.offsetHeight; // trigger reflow
+    this.content.offsetHeight;
     this.content.style.animation = '';
 
     if (searchQuery && route.page === 'home') {
