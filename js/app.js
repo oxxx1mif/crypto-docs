@@ -59,6 +59,7 @@ class CryptoApp {
     });
     this.sidebar.innerHTML = html;
 
+    // Раскрытие подменю
     this.sidebar.querySelectorAll('.section-link').forEach(link => {
       link.addEventListener('click', (e) => {
         const item = link.parentElement;
@@ -98,6 +99,11 @@ class CryptoApp {
 
   render() {
     const { searchQuery, route } = this.state;
+    // Перезапускаем анимацию появления
+    this.content.style.animation = 'none';
+    this.content.offsetHeight; // trigger reflow
+    this.content.style.animation = '';
+
     if (searchQuery && route.page === 'home') {
       this.renderSearchResults(searchQuery);
       this.highlightSidebar(route);
@@ -199,7 +205,7 @@ class CryptoApp {
       const text = `${f.name} ${f.description.short} ${(f.tags||[]).join(' ')}`.toLowerCase();
       return text.includes(query);
     });
-    let html = `<h2>Search Results</h2>`;
+    let html = `<h2 class="section-title">Search Results</h2>`;
     if (results.length === 0) html += `<p>No functions found.</p>`;
     else {
       html += `<div class="function-grid">`;

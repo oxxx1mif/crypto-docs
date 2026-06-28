@@ -10,11 +10,11 @@
           "metadata": {
             "author": "oxxx1mif",
             "crypto_version": "v0.1",
-            "os_version": "v0.7"
+            "os_version": " "
           },
           "description": {
             "short": "Cryptographic hash function producing a 256-bit digest.",
-            "full": "SHA-256 is a member of the SHA-2 family. It processes input in 512-bit blocks and outputs a 256-bit hash. Widely used for integrity verification, digital signatures, and password hashing."
+            "full": "SHA-256 is a member of the SHA-2 family. It processes input in 512-bit blocks and outputs a 256-bit hash."
           },
           "tags": ["sha2", "hashing", "integrity", "fips"],
           "vulnerabilities": [
