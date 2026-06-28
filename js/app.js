@@ -45,9 +45,8 @@ class CryptoApp {
     return { page: 'home' };
   }
 
-  /* ---------- Sidebar ---------- */
   buildSidebar() {
-    let html = '<h3>Sections</h3>';
+    let html = '<h3>Navigation</h3>';
     this.data.sections.forEach(section => {
       const funcs = section.functions || [];
       html += `<div class="section-item" data-section="${section.id}">`;
@@ -97,7 +96,6 @@ class CryptoApp {
     }
   }
 
-  /* ---------- Render ---------- */
   render() {
     const { searchQuery, route } = this.state;
     if (searchQuery && route.page === 'home') {
@@ -117,20 +115,20 @@ class CryptoApp {
   handleRoute() { this.render(); }
 
   renderHome() {
-    let html = '<div class="hero"><h2>Crypto Module Documentation</h2><p>Comprehensive reference of cryptographic functions.</p>';
+    let html = '<div class="hero"><h2>Crypto Documentation</h2><p>Explore cryptographic functions and their implementations.</p></div>';
     html += '<div class="section-grid">';
     this.data.sections.forEach(section => {
       const count = section.functions.length;
       html += `<a href="#/section/${section.id}" class="section-card"><h3>${section.name}</h3><p>${count} function${count!==1?'s':''}</p></a>`;
     });
-    html += '</div></div>';
+    html += '</div>';
     this.content.innerHTML = html;
   }
 
   renderSection(sectionId) {
     const section = this.data.sections.find(s => s.id === sectionId);
     if (!section) return this.renderHome();
-    let html = `<h2>${section.name}</h2><div class="function-grid">`;
+    let html = `<h2 class="section-title">${section.name}</h2><div class="function-grid">`;
     section.functions.forEach(func => html += this.renderFunctionCard(func));
     html += `</div>`;
     this.content.innerHTML = html;
@@ -160,10 +158,10 @@ class CryptoApp {
     if (func.code_examples) {
       html += `<div class="detail-section"><h3>Code Examples</h3>`;
       if (func.code_examples.rust) {
-        html += `<div class="code-block"><pre><code class="language-rust">${this.escapeHtml(func.code_examples.rust)}</code></pre><button class="copy-btn">⧉</button></div>`;
+        html += `<div class="code-block"><pre><code class="language-rust">${this.escapeHtml(func.code_examples.rust)}</code></pre><button class="copy-btn">Copy</button></div>`;
       }
       if (func.code_examples.c) {
-        html += `<div class="code-block"><pre><code class="language-c">${this.escapeHtml(func.code_examples.c)}</code></pre><button class="copy-btn">⧉</button></div>`;
+        html += `<div class="code-block"><pre><code class="language-c">${this.escapeHtml(func.code_examples.c)}</code></pre><button class="copy-btn">Copy</button></div>`;
       }
       html += `</div>`;
     }
@@ -178,18 +176,9 @@ class CryptoApp {
     html += `</div>`;
     this.content.innerHTML = html;
     this.attachCopyButtons();
-
-    // Принудительная подсветка синтаксиса
     if (window.hljs) {
-      document.querySelectorAll('pre code').forEach(block => {
-        hljs.highlightElement(block);
-      });
+      document.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
     }
-  }
-
-  codeBlock(code, lang) {
-    const escaped = this.escapeHtml(code);
-    return `<div class="code-block"><pre><code class="language-${lang}">${escaped}</code></pre><button class="copy-btn">⧉</button></div>`;
   }
 
   attachCopyButtons() {
@@ -218,11 +207,6 @@ class CryptoApp {
       html += `</div>`;
     }
     this.content.innerHTML = html;
-    if (window.hljs) {
-      document.querySelectorAll('pre code').forEach(block => {
-        hljs.highlightElement(block);
-      });
-    }
   }
 
   escapeHtml(text) {
