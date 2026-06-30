@@ -10,7 +10,7 @@
           "metadata": {
             "author": "oxxx1mif",
             "crypto_version": "v0.1",
-            "os_version": "no"
+            "os_version": "v0.7"
           },
           "description": {
             "short": "Cryptographic hash function producing a 256-bit digest.",
@@ -26,6 +26,30 @@
             "c": "#include <stdint.h>\n#include <string.h>\n\nstruct Sha256;\n\nextern void sha256_init(struct Sha256 *ctx);\nextern void sha256_update(struct Sha256 *ctx, const uint8_t *data, size_t len);\nextern void sha256_finalize(struct Sha256 *ctx, uint8_t out[32]);\n\nvoid compute() {\n    struct Sha256 ctx;\n    sha256_init(&ctx);\n    sha256_update(&ctx, (const uint8_t*)\"abc\", 3);\n    uint8_t digest[32];\n    sha256_finalize(&ctx, digest);\n}"
           },
           "implementation_url": "https://github.com/NightFox-YT/Realix/tree/feature/crypto/source/crypto/sha256",
+          "contributors": ["oxxx1mif"]
+        },
+        {
+          "id": "blake3",
+          "name": "BLAKE3",
+          "metadata": {
+            "author": "oxxx1mif",
+            "crypto_version": "v0.1",
+            "os_version": "no"
+          },
+         "description": {
+            "short": "Cryptographic hash function producing a BLAKE3 digest.",
+            "full": "BLAKE3 is an extremely fast, parallelizable cryptographic hash function. It is based on the BLAKE2 design and supports arbitrary output lengths."
+          },
+          "tags": ["blake3", "hashing", "speed", "parallel"],
+          "vulnerabilities": [
+            "Newer than SHA-2, less battle-tested, but no known practical attacks.",
+            "Resistant to length extension attacks by design."
+          ],
+          "code_examples": {
+            "rust": "soon",
+            "c": "soon"
+          },
+          "implementation_url": "https://github.com/NightFox-YT/Realix/tree/feature/crypto/source/crypto/blake3",
           "contributors": ["oxxx1mif"]
         }
       ]
